@@ -7,18 +7,18 @@ authors = [{ name = "Stefan de Lange" }]
 maintainers = [{ name = "Stefan de Lange" }]
 readme = "README.md"
 classifiers = [
-  "Development Status :: 3 - Alpha",
-  "Framework :: FastAPI",
-  "Intended Audience :: Developers",
-  "Natural Language :: English",
-  "Programming Language :: Python :: 3.13",
-  "Programming Language :: Python :: 3",
-  "Topic :: Software Development :: Libraries :: Python Modules",
-  "Topic :: Scientific/Engineering :: Physics",
+    "Development Status :: 3 - Alpha",
+    "Framework :: FastAPI",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Scientific/Engineering :: Physics",
 ]
 keywords = ["energy", "pvcast", "api", "solar", "photovoltaics"]
 requires-python = ">=3.11"
-dependencies = []
+dependencies = ["fastapi>=0.115.11", "pvlib>=0.11.2"]
 
 [project.urls]
 Changelog = "https://github.com/HALocalSolar/pvcast-core/releases"
@@ -91,15 +91,15 @@ asyncio_mode = "auto"
 
 [tool.ruff.lint]
 ignore = [
-  "ANN401",  # Opinioated warning on disallowing dynamically typed expressions
-  "D203",    # Conflicts with other rules
-  "D213",    # Conflicts with other rules
-  "D417",    # False positives in some occasions
-  "PLR2004", # Just annoying, not really useful
+    "ANN401",  # Opinioated warning on disallowing dynamically typed expressions
+    "D203",    # Conflicts with other rules
+    "D213",    # Conflicts with other rules
+    "D417",    # False positives in some occasions
+    "PLR2004", # Just annoying, not really useful
 
-  # Conflicts with the Ruff formatter
-  "COM812",
-  "ISC001",
+    # Conflicts with the Ruff formatter
+    "COM812",
+    "ISC001",
 ]
 select = ["ALL"]
 
@@ -115,24 +115,19 @@ max-complexity = 25
 
 [tool.uv]
 prerelease = "allow"
-dev-dependencies = [
-  "codespell==2.4.1",
-  "covdefaults==2.3.0",
-  "coverage[toml]==7.6.12",
-  "mypy==1.15.0",
-  "pre-commit==4.1.0",
-  "pre-commit-hooks==5.0.0",
-  "pylint==3.3.4",
-  "pytest==8.3.5",
-  "pytest-asyncio==0.25.3",
-  "pytest-cov==6.0.0",
-  "ruff==0.9.9",
-  "yamllint==1.35.1",
+
+[dependency-groups]
+dev = [
+    "codespell==2.4.1",
+    "covdefaults==2.3.0",
+    "coverage[toml]==7.6.12",
+    "mypy==1.15.0",
+    "pre-commit==4.1.0",
+    "pre-commit-hooks==5.0.0",
+    "pylint==3.3.4",
+    "pytest==8.3.5",
+    "pytest-asyncio==0.25.3",
+    "pytest-cov==6.0.0",
+    "ruff==0.9.9",
+    "yamllint==1.35.1",
 ]
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/pvcast"]
