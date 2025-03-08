@@ -1,0 +1,138 @@
+[project]
+name = "pvcast-core"
+version = "0.0.0"
+license = { text = "MIT License" }
+description = "pvcast-core implements the core photovoltaics forecasting functionality"
+authors = [{ name = "Stefan de Lange" }]
+maintainers = [{ name = "Stefan de Lange" }]
+readme = "README.md"
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Framework :: FastAPI",
+  "Intended Audience :: Developers",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: Scientific/Engineering :: Physics",
+]
+keywords = ["energy", "pvcast", "api", "solar", "photovoltaics"]
+requires-python = ">=3.11"
+dependencies = []
+
+[project.urls]
+Changelog = "https://github.com/HALocalSolar/pvcast-core/releases"
+Issues = "https://github.com/HALocalSolar/pvcast-core/issues"
+Repository = "https://github.com/HALocalSolar/pvcast-core"
+
+[tool.coverage.run]
+plugins = ["covdefaults"]
+source = ["pvcast"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 50
+omit = []
+
+[tool.mypy]
+# Specify the target platform details in config, so your developers are
+# free to run mypy on Windows, Linux, or macOS and get consistent
+# results.
+platform = "linux"
+python_version = "3.11"
+
+# show error messages from unrelated files
+follow_imports = "normal"
+
+# suppress errors about unsatisfied imports
+ignore_missing_imports = true
+
+# be strict
+check_untyped_defs = true
+disallow_any_generics = true
+disallow_incomplete_defs = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_decorators = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+no_implicit_reexport = true
+strict_optional = true
+warn_incomplete_stub = true
+warn_no_return = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_unused_configs = true
+warn_unused_ignores = true
+
+
+[tool.pylint.MASTER]
+extension-pkg-whitelist = ["orjson"]
+ignore = ["tests"]
+
+[tool.pylint.BASIC]
+good-names = ["_", "ex", "fp", "i", "id", "j", "k", "on", "Run", "T"]
+
+[tool.pylint.DESIGN]
+max-attributes = 8
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = ["duplicate-code", "format", "unsubscriptable-object"]
+
+[tool.pylint.SIMILARITIES]
+ignore-imports = true
+
+[tool.pylint.FORMAT]
+max-line-length = 88
+
+[tool.pytest.ini_options]
+addopts = "--cov"
+asyncio_mode = "auto"
+
+[tool.ruff.lint]
+ignore = [
+  "ANN401",  # Opinioated warning on disallowing dynamically typed expressions
+  "D203",    # Conflicts with other rules
+  "D213",    # Conflicts with other rules
+  "D417",    # False positives in some occasions
+  "PLR2004", # Just annoying, not really useful
+
+  # Conflicts with the Ruff formatter
+  "COM812",
+  "ISC001",
+]
+select = ["ALL"]
+
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = false
+mark-parentheses = false
+
+[tool.ruff.lint.isort]
+known-first-party = ["pvcast"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 25
+
+[tool.uv]
+prerelease = "allow"
+dev-dependencies = [
+  "codespell==2.4.1",
+  "covdefaults==2.3.0",
+  "coverage[toml]==7.6.12",
+  "mypy==1.15.0",
+  "pre-commit==4.1.0",
+  "pre-commit-hooks==5.0.0",
+  "pylint==3.3.4",
+  "pytest==8.3.5",
+  "pytest-asyncio==0.25.3",
+  "pytest-cov==6.0.0",
+  "ruff==0.9.9",
+  "yamllint==1.35.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pvcast"]
