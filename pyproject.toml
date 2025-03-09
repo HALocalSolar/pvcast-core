@@ -17,8 +17,8 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Physics",
 ]
 keywords = ["energy", "pvcast", "api", "solar", "photovoltaics"]
-requires-python = ">=3.11"
-dependencies = ["fastapi>=0.115.11", "pvlib>=0.11.2"]
+requires-python = ">=3.13"
+dependencies = ["fastapi>=0.115.11", "pvlib>=0.11.2", "uvicorn>=0.34.0"]
 
 [project.urls]
 Changelog = "https://github.com/HALocalSolar/pvcast-core/releases"
@@ -39,7 +39,7 @@ omit = []
 # free to run mypy on Windows, Linux, or macOS and get consistent
 # results.
 platform = "linux"
-python_version = "3.11"
+python_version = "3.13"
 
 # show error messages from unrelated files
 follow_imports = "normal"
