@@ -18,7 +18,12 @@ classifiers = [
 ]
 keywords = ["energy", "pvcast", "api", "solar", "photovoltaics"]
 requires-python = ">=3.13"
-dependencies = ["fastapi>=0.115.11", "pvlib>=0.11.2", "uvicorn>=0.34.0"]
+dependencies = [
+    "fastapi>=0.115.11",
+    "pandas>=2.2.3",
+ "pvlib>=0.11.2",
+ "uvicorn>=0.34.0",
+]
 
 [project.urls]
 Changelog = "https://github.com/HALocalSolar/pvcast-core/releases"

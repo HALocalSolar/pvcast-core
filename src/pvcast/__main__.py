@@ -5,8 +5,7 @@ import uvicorn
 
 def main() -> None:
     """Start the uvicorn server."""
-
-    uvicorn.run("src.pvcast.webserver.app:app")
+    uvicorn.run("src.pvcast.webserver.app:app", reload=True)
 
 
 if __name__ == "__main__":
