@@ -6,11 +6,13 @@ The software architecture of the entire project looks something like this (preli
 flowchart LR
 
     subgraph pvcast-addon
-        direction TB
-        B[pvcast-core]
-        F[pvcast-frontend]
+        subgraph pvcast-docker
+            direction TB
+            B[pvcast-core]
+            F[pvcast-frontend]
 
-        F .->|pvconfig.yaml| B
+            F .->|pvconfig.yaml| B
+        end
     end
 
     subgraph homeassistant

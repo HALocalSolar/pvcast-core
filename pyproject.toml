@@ -19,10 +19,13 @@ classifiers = [
 keywords = ["energy", "pvcast", "api", "solar", "photovoltaics"]
 requires-python = ">=3.13"
 dependencies = [
+    "beautifulsoup4>=4.13.3",
     "fastapi>=0.115.11",
     "pandas>=2.2.3",
- "pvlib>=0.11.2",
- "uvicorn>=0.34.0",
+    "pvlib>=0.11.2",
+    "uvicorn>=0.34.0",
+    "voluptuous>=0.15.2",
+    "websockets>=15.0.1",
 ]
 
 [project.urls]

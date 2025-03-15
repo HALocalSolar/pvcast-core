@@ -1,17 +1,17 @@
-"""Contains the FastAPI router for the /live endpoint."""
+"""Contains the FastAPI router for the /historical endpoint."""
 
 from __future__ import annotations
 
-import datetime as dt  # noqa: TCH003
-from typing import Any
+import datetime as dt
 
 from fastapi import APIRouter, Depends, Query
 from typing_extensions import Annotated
 
 from src.pvcast.model.model import PVSystemManager  # noqa: TCH001
 from src.pvcast.weather.weather import WeatherAPI  # noqa: TCH001
+from src.pvcast.webserver.const import END_DT_DEFAULT, START_DT_DEFAULT
 from src.pvcast.webserver.models.base import Interval, PVPlantNames
-from src.pvcast.webserver.models.live import LiveModel, WeatherSources
+from src.pvcast.webserver.models.historical import HistoricalModel
 from src.pvcast.webserver.routers.dependencies import (  # noqa: TCH001
     get_pv_system_mngr,
     get_weather_sources,
@@ -22,26 +22,25 @@ from .helpers import get_forecast_result_dict
 router = APIRouter()
 
 
-@router.get("/{plant_name}/{interval}/{weather_source}")
+@router.get("/{plant_name}/{interval}")
 def get(  # pylint: disable=too-many-arguments
     plant_name: PVPlantNames,
-    weather_source: WeatherSources,
     pv_system_mngr: Annotated[PVSystemManager, Depends(get_pv_system_mngr)],
-    weather_apis: Annotated[tuple[WeatherAPI], Depends(get_weather_sources)],
+    weather_apis: Annotated[list[WeatherAPI], Depends(get_weather_sources)],
     start: Annotated[
-        dt.datetime | None,
+        dt.datetime,
         Query(
             description="Start datetime in ISO format. Leave empty for no filter. Must be UTC."
         ),
-    ] = None,
+    ] = START_DT_DEFAULT,
     end: Annotated[
-        dt.datetime | None,
+        dt.datetime,
         Query(
             description="End datetime in ISO format. Leave empty for no filter. Must be UTC."
         ),
-    ] = None,
+    ] = END_DT_DEFAULT,
     interval: Interval = Interval.H1,
-) -> LiveModel:
+) -> HistoricalModel:
     """Get the estimated PV output power in Watts.
 
     Forecast is provided at interval <interval> for the given PV system <name>.
@@ -53,29 +52,21 @@ def get(  # pylint: disable=too-many-arguments
     :param interval: Interval of the returned data
     :return: Estimated PV power output in Watts at the given interval <interval> for the given PV system <name>
     """
-    # get the correct weather API from the list of weather APIs
-    weather_apis_f = filter(
-        lambda api: api.name == weather_source.value, weather_apis
-    )
-    weather_api: WeatherAPI = next(weather_apis_f)
+    # for historical we don't care which weather API is used, so just use the first one
+    weather_api = weather_apis[0]
 
-    # convert dict to dataframe
-    weather_dict: dict[str, Any] = weather_api.get_weather(calc_irrads=True)
-    weather_df = pl.DataFrame(weather_dict["data"]).with_columns(
-        pl.col("datetime").str.to_datetime()
-    )
+    # build the datetime index
+    datetimes = weather_api.get_source_dates(start, end, dt.timedelta(hours=1))
 
-    # filter weather data between start and end timestamps
-    if start is not None:
-        weather_df = weather_df.filter(weather_df["datetime"] >= start)
-    if end is not None:
-        weather_df = weather_df.filter(weather_df["datetime"] < end)
+    # convert datetimes to dataframe
+    weather_df = pl.DataFrame(datetimes.alias("datetime"))
 
     # get the PV power output
     response_dict = get_forecast_result_dict(
-        str(plant_name.name), pv_system_mngr, "live", interval, weather_df
+        str(plant_name.name),
+        pv_system_mngr,
+        "historical",
+        interval,
+        weather_df,
     )
-
-    # add weather source from weather_dict to response_dict
-    response_dict["weather_source"] = weather_dict["source"]
-    return LiveModel(**response_dict)
+    return HistoricalModel(**response_dict)

@@ -1,9 +1,17 @@
 """Webserver data models base module."""
 
+from __future__ import annotations
+
 from enum import Enum
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 from typing_extensions import Annotated
+
+from src.pvcast.webserver.routers.dependencies import get_pv_system_mngr
+
+if TYPE_CHECKING:
+    from src.pvcast.model.model import PVSystemManager
 
 res_examp = [
     {
@@ -69,3 +77,17 @@ class BaseDataModel(BaseModel):
     timezone: Annotated[str | None, "Timezone of the returned data"] = "UTC"
     interval: Annotated[Interval, "Interval of the returned data"]
     period: Annotated[list[PowerData], "PV power at the requested interval."]
+
+
+# create enum of pv plant names
+sys_mngr: PVSystemManager = get_pv_system_mngr()
+pv_plant_names = {str(name): str(name) for name in sys_mngr.plant_names}
+pv_plant_names["All"] = "All"
+TypeEnum = Enum("TypeEnum", pv_plant_names)  # type: ignore[misc]
+
+
+class TempEnum(str, Enum):
+    """Proxy enum."""
+
+
+PVPlantNames = TempEnum("TypeEnum", pv_plant_names)  # type: ignore[call-overload]

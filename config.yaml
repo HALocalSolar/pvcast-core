@@ -1,0 +1,39 @@
+# configuration file for pvcast
+
+# general configuration
+---
+general:
+  weather:
+    max_forecast_days: 7
+    sources:
+      - name: HomeAssistant
+        type: homeassistant
+        entity_id: weather.forecast_thuis
+        url: http://localhost:8123
+        token: my_long_lived_token
+      - name: ClearOutside
+        type: clearoutside
+  location:
+    latitude: 52.35845515630293
+    longitude: 4.88115070391368
+    timezone: Europe/Amsterdam
+    altitude: -6.7
+
+# PV system configuration
+plant:
+  - name: EastWest
+    inverter: SolarEdge_Technologies_Ltd___SE4000__240V_
+    microinverter: false
+    arrays:
+      - name: East
+        tilt: 30
+        azimuth: 90
+        modules_per_string: 4
+        strings: 1
+        module: Trina_Solar_TSM_330DD14A_II_
+      - name: West
+        tilt: 30
+        azimuth: 270
+        modules_per_string: 8
+        strings: 1
+        module: Trina_Solar_TSM_330DD14A_II_
