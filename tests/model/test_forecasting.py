@@ -99,7 +99,7 @@ class TestForecastResult:
             return data_file.read()
 
     @pytest.fixture
-    def forecast_df(self) -> pl.DataFrame:
+    def forecast_df(self) -> pd.DataFrame:
         """Return a DataFrame with test data."""
         # re-orient the test_ac_power dict to {time: [timestamps], ac_power: [values]}
         ac_data = {
@@ -108,20 +108,20 @@ class TestForecastResult:
         }
 
         # create a polars series from the test dict
-        ac_series = pl.from_dict(
+        ac_series = pd.from_dict(
             ac_data,  # type: ignore[arg-type]
-            schema={"datetime": str, "ac_power": pl.Int64},
+            schema={"datetime": str, "ac_power": pd.Int64},
         )
 
         # convert timestamps to datetime
         return ac_series.with_columns(
-            pl.col("datetime").str.to_datetime("%Y-%m-%dT%H:%M:%S%z")
+            pd.col("datetime").str.to_datetime("%Y-%m-%dT%H:%M:%S%z")
         )
 
         # convert column names
 
     @pytest.fixture
-    def forecast_result(self, forecast_df: pl.DataFrame) -> ForecastResult:
+    def forecast_result(self, forecast_df: pd.DataFrame) -> ForecastResult:
         """Return a ForecastResult instance."""
         return ForecastResult(
             name="test",
@@ -134,7 +134,7 @@ class TestForecastResult:
         [
             (None, ValueError, "Must provide AC power data."),
             (
-                pl.DataFrame(
+                pd.DataFrame(
                     {
                         "datetime": ["2022-01-01T00:00:00+00:00"],
                         "ac_power": [1],
@@ -144,7 +144,7 @@ class TestForecastResult:
                 "Datetime column must have dtype datetime.datetime",
             ),
             (
-                pl.DataFrame(
+                pd.DataFrame(
                     {
                         "datetime": [
                             dt.datetime(2022, 1, 1, tzinfo=dt.timezone.utc)
@@ -156,12 +156,12 @@ class TestForecastResult:
                 "AC power column must have dtype int64",
             ),
             (
-                pl.DataFrame({"ac_power": [1, 2, 3]}),
+                pd.DataFrame({"ac_power": [1, 2, 3]}),
                 ValueError,
                 "AC power data must have a 'datetime' column",
             ),
             (
-                pl.DataFrame(
+                pd.DataFrame(
                     {
                         "datetime": [
                             dt.datetime(2022, 1, 1, tzinfo=dt.timezone.utc)
@@ -173,7 +173,7 @@ class TestForecastResult:
                 "AC power data contains null values",
             ),
             (
-                pl.DataFrame(
+                pd.DataFrame(
                     {
                         "datetime": [
                             dt.datetime(2022, 1, 1, tzinfo=dt.timezone.utc)
@@ -187,7 +187,7 @@ class TestForecastResult:
     )
     def test_init_exceptions(
         self,
-        ac_power: pl.DataFrame,
+        ac_power: pd.DataFrame,
         expected_exception: type[Exception],
         match: str,
     ) -> None:
@@ -247,7 +247,7 @@ class TestForecastResult:
         """Test that forecast result frequency returns -1 with unsorted datetimes."""
         assert forecast_result.ac_power is not None
         forecast_result.ac_power = forecast_result.ac_power.select(
-            pl.col("datetime").shuffle(seed=42)
+            pd.col("datetime").shuffle(seed=42)
         )
         with pytest.raises(ValueError, match="Datetime column must be sorted"):
             _ = forecast_result.frequency
@@ -259,7 +259,7 @@ class TestForecastResult:
         assert forecast_result.ac_power is not None
         forecast_result.ac_power = forecast_result.ac_power.with_row_index(
             "row_nr"
-        ).filter(pl.col("row_nr") != 1)
+        ).filter(pd.col("row_nr") != 1)
         with pytest.raises(
             ValueError,
             match="Datetime column must be equidistantly spaced in time.",
@@ -290,8 +290,8 @@ class TestForecastResult:
 
         # power data is hourly, so the sum == energy
         fc_energy = forecast_result.energy(period).sum()
-        assert isinstance(fc_energy, pl.DataFrame)
-        ac_energy: pl.Series = fc_energy["ac_energy"]
+        assert isinstance(fc_energy, pd.DataFrame)
+        ac_energy: pd.Series = fc_energy["ac_energy"]
         assert ac_energy.item() == pytest.approx(
             sum_power["ac_energy"].item(), rel=0.05
         )
@@ -324,7 +324,7 @@ class TestForecastResult:
         assert forecast_result.ac_power is not None
         forecast_result.ac_power = forecast_result.ac_power.with_row_index(
             "row_nr"
-        ).filter(pl.col("row_nr") % 2 == 0)
+        ).filter(pd.col("row_nr") % 2 == 0)
         with pytest.raises(
             ValueError,
             match="Cannot calculate energy for data with frequency 7200s. Must be <= 1H.",
@@ -358,7 +358,7 @@ class TestForecastResult:
     def test_add_precipitable_water(
         self,
         pv_plant_model: PVPlantModel,
-        weather_df: pl.DataFrame,
+        weather_df: pd.DataFrame,
         drop: str | None,
     ) -> None:
         """Test the add_precipitable_water method with missing data."""
@@ -373,20 +373,20 @@ class TestForecastResult:
             assert result.fc_type == ForecastType.LIVE
             assert result.ac_power is not None
             assert "ac_power" in result.ac_power.columns
-            assert result.ac_power["ac_power"].dtype == pl.Int64
+            assert result.ac_power["ac_power"].dtype == pd.Int64
 
     def test_add_precipitable_water_already_present(
-        self, pv_plant_model: PVPlantModel, weather_df: pl.DataFrame
+        self, pv_plant_model: PVPlantModel, weather_df: pd.DataFrame
     ) -> None:
         """Test the add_precipitable_water method."""
         weather_df = weather_df.with_columns(
-            pl.lit(1).alias("precipitable_water")
+            pd.lit(1).alias("precipitable_water")
         )
         result: ForecastResult = pv_plant_model.live.run(weather_df)
         assert result.fc_type == ForecastType.LIVE
         assert result.ac_power is not None
         assert "ac_power" in result.ac_power.columns
-        assert result.ac_power["ac_power"].dtype == pl.Int64
+        assert result.ac_power["ac_power"].dtype == pd.Int64
 
     @pytest.mark.parametrize(
         "fc_type",
@@ -401,7 +401,7 @@ class TestForecastResult:
     def test_power_run(
         self,
         pv_plant_model: PVPlantModel,
-        weather_df: pl.DataFrame,
+        weather_df: pd.DataFrame,
         fc_type: ForecastType,
     ) -> None:
         """Test the power estimate run method."""
@@ -412,7 +412,7 @@ class TestForecastResult:
         assert result.fc_type == fc_type
         assert result.ac_power is not None
         assert "ac_power" in result.ac_power.columns
-        assert result.ac_power["ac_power"].dtype == pl.Int64
+        assert result.ac_power["ac_power"].dtype == pd.Int64
 
     @pytest.mark.parametrize(
         "fc_type",
@@ -435,7 +435,7 @@ class TestForecastResult:
     def test_power_run_historical_data_present(
         self,
         pv_plant_model: PVPlantModel,
-        weather_df: pl.DataFrame,
+        weather_df: pd.DataFrame,
         *,
         use_weather_df: bool,
     ) -> None:
@@ -451,7 +451,7 @@ class TestForecastResult:
         assert result.fc_type == ForecastType.HISTORICAL
         assert result.ac_power is not None
         assert "ac_power" in result.ac_power.columns
-        assert result.ac_power["ac_power"].dtype == pl.Int64
+        assert result.ac_power["ac_power"].dtype == pd.Int64
 
     def test_power_run_historical_data_missing(
         self,
@@ -481,7 +481,7 @@ class TestForecastResult:
             assert result.fc_type == ForecastType.HISTORICAL
             assert result.ac_power is not None
             assert "ac_power" in result.ac_power.columns
-            assert result.ac_power["ac_power"].dtype == pl.Int64
+            assert result.ac_power["ac_power"].dtype == pd.Int64
 
         # test that the data is saved to the correct location
         assert pv_plant_model.historical._pvgis_data_path.exists()

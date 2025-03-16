@@ -75,7 +75,7 @@ class CommonWeatherTests:
 
     @pytest.mark.parametrize(
         "weather_api_fix_loc",
-        [common_df.select(pl.exclude("datetime"))],
+        [common_df.select(pd.exclude("datetime"))],
         indirect=True,
     )
     def test_weather_data_no_datetime(
@@ -92,15 +92,15 @@ class CommonWeatherTests:
         ("weather_api_fix_loc", "error_message"),
         [
             (
-                common_df.shift(-1).with_columns(pl.all().forward_fill()),
+                common_df.shift(-1).with_columns(pd.all().forward_fill()),
                 "Processed data contains duplicate",
             ),
             (
-                common_df.select(pl.all().shuffle(seed=1)),
+                common_df.select(pd.all().shuffle(seed=1)),
                 "Processed data is not sorted.",
             ),
             (
-                common_df.with_row_index().filter(pl.col("index") != 1),
+                common_df.with_row_index().filter(pd.col("index") != 1),
                 "Processed data contains gaps.",
             ),
         ],
@@ -144,17 +144,17 @@ class TestWeatherAPI(CommonWeatherTests):
         [
             (
                 common_df.with_columns(
-                    pl.Series([0, np.nan, 1]).alias("temperature")
+                    pd.Series([0, np.nan, 1]).alias("temperature")
                 ),
                 "Processed data contains NaN values.",
             ),
             (
-                common_df.with_columns(pl.lit(0).alias("invalid_column")),
+                common_df.with_columns(pd.lit(0).alias("invalid_column")),
                 "Error validating weather data:",
             ),
             (
                 common_df.with_columns(
-                    pl.Series([0, None, 1]).alias("temperature")
+                    pd.Series([0, None, 1]).alias("temperature")
                 ),
                 "Processed data contains null values.",
             ),
@@ -178,7 +178,7 @@ class TestWeatherAPI(CommonWeatherTests):
         weather_api_fix_loc: WeatherAPI,
         how: str,
         interval_min: int,
-        weather_df: pl.DataFrame,
+        weather_df: pd.DataFrame,
     ) -> None:
         """Test the cloud_cover_to_irradiance function."""
         interval = dt.timedelta(minutes=interval_min)
@@ -189,15 +189,15 @@ class TestWeatherAPI(CommonWeatherTests):
             time_column="datetime", every=interval, maintain_order=True
         )
 
-        assert isinstance(weather_df, pl.DataFrame)
-        assert weather_df["cloud_cover"].dtype == pl.Float64
+        assert isinstance(weather_df, pd.DataFrame)
+        assert weather_df["cloud_cover"].dtype == pd.Float64
         irrads = weather_api_fix_loc.cloud_cover_to_irradiance(
             weather_df, how=how
         )
-        assert isinstance(irrads, pl.DataFrame)
+        assert isinstance(irrads, pd.DataFrame)
         for irr in ["ghi", "dni", "dhi"]:
             assert irr in irrads.columns
-            assert irrads[irr].dtype == pl.Float64
+            assert irrads[irr].dtype == pd.Float64
             # min irradiance on earth
             assert irrads[irr].min() >= 0  # type: ignore[operator]
             # max irradiance on earth
@@ -213,7 +213,7 @@ class TestWeatherAPI(CommonWeatherTests):
         """Test the cloud_cover_to_irradiance function with invalid how argument."""
         with pytest.raises(ValueError, match="Invalid how argument"):
             _ = weather_api_fix_loc.cloud_cover_to_irradiance(
-                pl.DataFrame({"cloud_cover": [0], "datetime": ["2020-01-01"]}),
+                pd.DataFrame({"cloud_cover": [0], "datetime": ["2020-01-01"]}),
                 how="invalid",
             )
 
@@ -234,7 +234,7 @@ class TestWeatherFactory:
         self,
         weather_api_factory: WeatherAPIFactory,
         test_url: str,
-        weather_df: pl.DataFrame,
+        weather_df: pd.DataFrame,
     ) -> None:
         """Test the get_weather_api function."""
         assert isinstance(weather_api_factory, WeatherAPIFactory)

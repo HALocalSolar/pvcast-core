@@ -22,9 +22,9 @@ if TYPE_CHECKING:
     from src.pvcast.weather.weather import WeatherAPI
 
 n_points = int(dt.timedelta(hours=48) / dt.timedelta(hours=1))
-mock_data = pl.DataFrame(
+mock_data = pd.DataFrame(
     {
-        "datetime": pl.datetime_range(
+        "datetime": pd.datetime_range(
             dt.datetime.now(dt.timezone.utc).replace(
                 hour=0, minute=0, second=0, microsecond=0
             ),
