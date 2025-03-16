@@ -8,12 +8,7 @@ import pytest
 from pytz import UnknownTimeZoneError
 
 from src.pvcast.config.configreader import ConfigReader
-from tests.const import (
-    TEST_CONF_PATH_ERROR,
-    TEST_CONF_PATH_NO_SEC,
-    TEST_CONF_PATH_SEC,
-    TEST_SECRETS_PATH,
-)
+from tests.const import TEST_CONF_ERR, TEST_CONF_STRING_PATH
 
 
 class TestConfigReader:
@@ -23,7 +18,7 @@ class TestConfigReader:
     def configreader(self) -> ConfigReader:
         """Fixture for the configreader initialized without a secrets file and
         no !secret tags in config."""
-        return ConfigReader(TEST_CONF_PATH_NO_SEC)
+        return ConfigReader(TEST_CONF_STRING_PATH)
 
     def test_configreader_no_secrets(self, configreader: ConfigReader) -> None:
         """Test the configreader without a secrets file and no !secret tags in
@@ -53,4 +48,4 @@ class TestConfigReader:
     def test_invalid_timezone(self) -> None:
         """Test the configreader with an invalid timezone."""
         with pytest.raises(UnknownTimeZoneError):
-            _ = ConfigReader(config_file_path=TEST_CONF_PATH_ERROR)
+            _ = ConfigReader(config_file_path=TEST_CONF_ERR)

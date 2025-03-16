@@ -4,7 +4,6 @@
 ---
 general:
   weather:
-    max_forecast_days: 7
     sources:
       - name: CO
         type: clearoutside

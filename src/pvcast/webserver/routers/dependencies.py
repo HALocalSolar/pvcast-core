@@ -51,10 +51,6 @@ def get_weather_sources() -> tuple[WeatherAPI, ...]:
     # all sources of weather data must be listed in the config file
     weather_data_sources = config_reader.config["general"]["weather"]["sources"]  # type: ignore[index]
 
-    max_forecast_days = dt.timedelta(
-        days=int(config_reader.config["general"]["weather"]["max_forecast_days"])  # type: ignore[index]
-    )
-
     # get the location
     latitude = config_reader.config["general"]["location"]["latitude"]  # type: ignore[index]
     longitude = config_reader.config["general"]["location"]["longitude"]  # type: ignore[index]

@@ -94,8 +94,14 @@ ignore-imports = true
 max-line-length = 88
 
 [tool.pytest.ini_options]
-addopts = "--cov"
-asyncio_mode = "auto"
+addopts = "--cov-report xml:coverage.xml --cov src.pvcast --cov-fail-under 0 --cov-append -m 'not integration' --cov-report term-missing"
+pythonpath = ["src"]
+log_cli = true
+log_cli_level = "DEBUG"
+log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+testpaths = "tests"
+markers = ["integration: marks as integration test"]
 
 [tool.ruff.lint]
 ignore = [

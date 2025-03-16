@@ -95,7 +95,6 @@ class ConfigReader:
                 Required("general"): {
                     Required("weather"): {
                         Required("sources"): [Any(homessistant, clearoutside)],
-                        Required("max_forecast_days"): Coerce(int),
                     },
                     Required("location"): {
                         Required("latitude"): float,
