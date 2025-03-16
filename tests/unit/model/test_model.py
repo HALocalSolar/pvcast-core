@@ -1,16 +1,17 @@
 """Unit tests for the model module."""
+
 from __future__ import annotations
 
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any
 
-import polars as pl
+import pandas as pd
 import pytest
 from pvlib.location import Location
 
-from pvcast.model.forecasting import ForecastType
-from pvcast.model.model import PVSystemManager
+from src.pvcast.model.forecasting import ForecastType
+from src.pvcast.model.model import PVSystemManager
 
 
 class TestPVModelChain:
@@ -71,9 +72,13 @@ class TestPVModelChain:
         assert isinstance(pv_sys_mngr.location.longitude, float)
         assert isinstance(pv_sys_mngr.location.altitude, float)
         assert pv_sys_mngr.location.tz == "UTC"
-        assert set(pv_sys_mngr.plant_names) == {cfg["name"] for cfg in basic_config}
+        assert set(pv_sys_mngr.plant_names) == {
+            cfg["name"] for cfg in basic_config
+        }
 
-    def test_pv_sys_mngr_get_pv_plant(self, pv_sys_mngr: PVSystemManager) -> None:
+    def test_pv_sys_mngr_get_pv_plant(
+        self, pv_sys_mngr: PVSystemManager
+    ) -> None:
         """Test the get_pv_plant function."""
         pv_sys = pv_sys_mngr.get_pv_plant("EastWest")
         assert pv_sys.name == "EastWest"
@@ -89,7 +94,10 @@ class TestPVModelChain:
         """Test the init_pv_system function with wrong inverter param path."""
         with pytest.raises(FileNotFoundError):
             PVSystemManager(
-                basic_config, *self.location, self.altitude, inv_path=Path("wrong_path")
+                basic_config,
+                *self.location,
+                self.altitude,
+                inv_path=Path("wrong_path"),
             )
 
     def test_init_pv_system_wrong_inverter(
@@ -111,7 +119,8 @@ class TestPVModelChain:
     ) -> None:
         """Test the init_pv_system function with wrong module model."""
         with pytest.raises(
-            KeyError, match=f"One of { {'wrong_module'} } not found in the database."
+            KeyError,
+            match=f"One of { {'wrong_module'} } not found in the database.",
         ):
             PVSystemManager(
                 basic_config_wrong_mod,

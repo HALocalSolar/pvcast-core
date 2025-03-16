@@ -69,7 +69,8 @@ class PVPlantModel:
     ) -> None:
         """Perform post-initialization tasks for the PVPlantModel.
 
-        This method creates the PV system models, sets the name, and initializes the forecast objects.
+        This method creates the PV system models, sets the name, and
+        initializes the forecast objects.
 
         :param config: The PV plant configuration dictionary.
         :param inv_param: The inverter parameters.
@@ -120,7 +121,8 @@ class PVPlantModel:
     ) -> list[PVSystem]:
         """Create the PV system. This method is called by __post_init__.
 
-        In case of a PV system with microinverters, each microinverter is represented by one PVSystem object.
+        In case of a PV system with microinverters, each microinverter is
+        represented by one PVSystem object.
         """
         _LOGGER.debug("Creating PV system model for system %s", config["name"])
         micro: bool = config["microinverter"]

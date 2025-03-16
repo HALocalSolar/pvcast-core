@@ -1,14 +1,19 @@
 """Test the weather module."""
+
 from __future__ import annotations
 
 import datetime as dt
 
 import numpy as np
-import polars as pl
+import pandas as pd
 import pytest
 from pvlib.location import Location
 
-from pvcast.weather.weather import WeatherAPI, WeatherAPIError, WeatherAPIFactory
+from src.pvcast.weather.weather import (
+    WeatherAPI,
+    WeatherAPIError,
+    WeatherAPIFactory,
+)
 from tests.conftest import MockWeatherAPI
 
 from .conftest import common_df
@@ -69,12 +74,17 @@ class CommonWeatherTests:
             assert "dhi" in datapoint
 
     @pytest.mark.parametrize(
-        "weather_api_fix_loc", [common_df.select(pl.exclude("datetime"))], indirect=True
+        "weather_api_fix_loc",
+        [common_df.select(pl.exclude("datetime"))],
+        indirect=True,
     )
-    def test_weather_data_no_datetime(self, weather_api_fix_loc: WeatherAPI) -> None:
+    def test_weather_data_no_datetime(
+        self, weather_api_fix_loc: WeatherAPI
+    ) -> None:
         """Test the get_weather function."""
         with pytest.raises(
-            WeatherAPIError, match="Processed data does not have a datetime column."
+            WeatherAPIError,
+            match="Processed data does not have a datetime column.",
         ):
             _ = weather_api_fix_loc.get_weather()
 
@@ -133,7 +143,9 @@ class TestWeatherAPI(CommonWeatherTests):
         ("weather_api", "error_match"),
         [
             (
-                common_df.with_columns(pl.Series([0, np.nan, 1]).alias("temperature")),
+                common_df.with_columns(
+                    pl.Series([0, np.nan, 1]).alias("temperature")
+                ),
                 "Processed data contains NaN values.",
             ),
             (
@@ -141,7 +153,9 @@ class TestWeatherAPI(CommonWeatherTests):
                 "Error validating weather data:",
             ),
             (
-                common_df.with_columns(pl.Series([0, None, 1]).alias("temperature")),
+                common_df.with_columns(
+                    pl.Series([0, None, 1]).alias("temperature")
+                ),
                 "Processed data contains null values.",
             ),
         ],
@@ -177,7 +191,9 @@ class TestWeatherAPI(CommonWeatherTests):
 
         assert isinstance(weather_df, pl.DataFrame)
         assert weather_df["cloud_cover"].dtype == pl.Float64
-        irrads = weather_api_fix_loc.cloud_cover_to_irradiance(weather_df, how=how)
+        irrads = weather_api_fix_loc.cloud_cover_to_irradiance(
+            weather_df, how=how
+        )
         assert isinstance(irrads, pl.DataFrame)
         for irr in ["ghi", "dni", "dhi"]:
             assert irr in irrads.columns

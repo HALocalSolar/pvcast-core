@@ -1,4 +1,5 @@
 """Webserver specific pytest setup."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,10 +7,10 @@ from typing import TYPE_CHECKING
 import pytest
 from fastapi.testclient import TestClient
 
-from pvcast.config.configreader import ConfigReader
-from pvcast.model.model import PVSystemManager  # noqa: TCH001
-from pvcast.webserver.app import app
-from pvcast.webserver.routers.dependencies import (
+from src.pvcast.config.configreader import ConfigReader
+from src.pvcast.model.model import PVSystemManager  # noqa: TCH001
+from src.pvcast.webserver.app import app
+from src.pvcast.webserver.routers.dependencies import (
     get_config_reader,
     get_pv_system_mngr,
     get_weather_sources,
@@ -17,7 +18,7 @@ from pvcast.webserver.routers.dependencies import (
 from tests.const import TEST_CONF_PATH_NO_SEC
 
 if TYPE_CHECKING:
-    from pvcast.weather.weather import WeatherAPI
+    from src.pvcast.weather.weather import WeatherAPI
 
 
 @pytest.fixture(scope="session")
@@ -27,9 +28,13 @@ def client_base() -> TestClient:
 
 
 @pytest.fixture
-def client(weather_api_fix_loc: WeatherAPI, pv_sys_mngr: PVSystemManager) -> TestClient:
+def client(
+    weather_api_fix_loc: WeatherAPI, pv_sys_mngr: PVSystemManager
+) -> TestClient:
     """Overwrite the weather sources dependency with a mock."""
-    app.dependency_overrides[get_weather_sources] = lambda: (weather_api_fix_loc,)
+    app.dependency_overrides[get_weather_sources] = lambda: (
+        weather_api_fix_loc,
+    )
     app.dependency_overrides[get_pv_system_mngr] = lambda: pv_sys_mngr
     app.dependency_overrides[get_config_reader] = lambda: ConfigReader(
         TEST_CONF_PATH_NO_SEC

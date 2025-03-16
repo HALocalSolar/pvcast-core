@@ -1,9 +1,10 @@
 """Test Home Assistant API class."""
+
 from __future__ import annotations
 
 import pytest
 
-from pvcast.homeassistant.homeassistantapi import HomeAssistantAPI
+from src.pvcast.homeassistant.homeassistantapi import HomeAssistantAPI
 from tests.const import HASS_TEST_TOKEN, HASS_TEST_URL, HASS_WEATHER_ENTITY_ID
 
 
@@ -76,8 +77,14 @@ class TestHomeAssistantAPI:
         }
         assert isinstance(homeassistant_api.data_headers["id"], int)
         assert homeassistant_api.data_headers["id"] > 0
-        assert homeassistant_api.data_headers["type"] == "weather/subscribe_forecast"
-        assert homeassistant_api.data_headers["entity_id"] == HASS_WEATHER_ENTITY_ID
+        assert (
+            homeassistant_api.data_headers["type"]
+            == "weather/subscribe_forecast"
+        )
+        assert (
+            homeassistant_api.data_headers["entity_id"]
+            == HASS_WEATHER_ENTITY_ID
+        )
         assert homeassistant_api.data_headers["forecast_type"] == "hourly"
 
     def test_get_forecast(self, homeassistant_api: HomeAssistantAPI) -> None:

@@ -1,16 +1,17 @@
 """Test all configured weather platforms that inherit from WeatherAPI class."""
+
 from __future__ import annotations
 
 import datetime as dt
 from typing import TYPE_CHECKING, Generator
 from urllib.parse import urljoin
 
-import polars as pl
+import pandas as pd
 import pytest
 import responses
 
-from pvcast.weather import API_FACTORY
-from pvcast.weather.homeassistant import WeatherAPIHomeassistant
+from src.pvcast.weather import API_FACTORY
+from src.pvcast.weather.homeassistant import WeatherAPIHomeassistant
 from tests.const import HASS_TEST_TOKEN, HASS_TEST_URL, HASS_WEATHER_ENTITY_ID
 
 from .test_weather import CommonWeatherTests
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
 
     from pvlib.location import Location
 
-    from pvcast.weather.weather import WeatherAPI
+    from src.pvcast.weather.weather import WeatherAPI
 
 
 class WeatherPlatform(CommonWeatherTests):
@@ -67,7 +68,9 @@ class TestHomeAssistantWeather(WeatherPlatform):
     """Set up the Home Assistant API."""
 
     @pytest.fixture
-    def homeassistant_api_setup(self, location: Location) -> WeatherAPIHomeassistant:
+    def homeassistant_api_setup(
+        self, location: Location
+    ) -> WeatherAPIHomeassistant:
         """Set up the Home Assistant API."""
         return WeatherAPIHomeassistant(
             location=location,
@@ -102,7 +105,9 @@ class TestClearOutsideWeather(WeatherPlatform):
                 body=clearoutside_html_page,
                 status=200,
             )
-            api = API_FACTORY.get_weather_api("clearoutside", location=location)
+            api = API_FACTORY.get_weather_api(
+                "clearoutside", location=location
+            )
             yield api
 
     @pytest.fixture

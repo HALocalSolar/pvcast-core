@@ -1,4 +1,5 @@
 """Commandline interface for pvcast unit tests."""
+
 from __future__ import annotations
 
 import argparse
@@ -9,7 +10,7 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
-from pvcast.commandline.commandline import _check_file_exists, get_args
+from src.pvcast.commandline.commandline import _check_file_exists, get_args
 
 
 class TestCommandline:
@@ -49,7 +50,9 @@ class TestCommandline:
 
     def test_check_file_exists_not_path(self) -> None:
         """Test if _check_file_exists raises an error if the path is not a Path object."""
-        with pytest.raises(argparse.ArgumentTypeError, match="is not a valid path"):
+        with pytest.raises(
+            argparse.ArgumentTypeError, match="is not a valid path"
+        ):
             _check_file_exists("not_a_path")  # type: ignore[arg-type]
 
     @patch("argparse.ArgumentParser.parse_args")
@@ -76,7 +79,9 @@ class TestCommandline:
         assert args["log_level"] == logging.DEBUG
         assert args["config"] == "test_config.yaml"
         assert (
-            args["secrets"] == "test_secrets.yaml" if "secrets" in mock_args else True
+            args["secrets"] == "test_secrets.yaml"
+            if "secrets" in mock_args
+            else True
         )
         assert args["workers"] == 5
         assert args["host"] == "localhost"

@@ -1,4 +1,5 @@
 """Test the configreader module."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -8,7 +9,7 @@ from pytz import UnknownTimeZoneError
 from yaml import ScalarNode, SequenceNode, YAMLError
 from yaml.loader import SafeLoader
 
-from pvcast.config.configreader import ConfigReader
+from src.pvcast.config.configreader import ConfigReader
 from tests.const import (
     TEST_CONF_PATH_ERROR,
     TEST_CONF_PATH_MISSING_SEC,

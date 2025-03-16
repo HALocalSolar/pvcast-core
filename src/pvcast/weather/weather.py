@@ -149,7 +149,7 @@ class WeatherAPI(ABC):
         )
 
     @abstractmethod
-    def retrieve_new_data(self) -> pl.DataFrame:
+    def retrieve_new_data(self) -> pd.DataFrame:
         """Retrieve new weather data from the API.
 
         :return: Response from the API
@@ -277,10 +277,10 @@ class WeatherAPI(ABC):
 
     def cloud_cover_to_irradiance(
         self,
-        cloud_cover: pl.DataFrame,
+        cloud_cover: pd.DataFrame,
         how: str = "clearsky_scaling",
         **kwargs: Any,
-    ) -> pl.DataFrame:
+    ) -> pd.DataFrame:
         """Convert cloud cover to irradiance. A wrapper method.
 
         NB: Code copied from pvlib.forecast as the pvlib forecast module is deprecated as of pvlib 0.9.1!
@@ -318,8 +318,8 @@ class WeatherAPI(ABC):
         return irrads
 
     def _cloud_cover_to_irradiance_clearsky_scaling(
-        self, cloud_cover: pl.DataFrame, times: pd.DatetimeIndex, **kwargs: Any
-    ) -> pl.DataFrame:
+        self, cloud_cover: pd.DataFrame, times: pd.DatetimeIndex, **kwargs: Any
+    ) -> pd.DataFrame:
         """Convert cloud cover to irradiance using the clearsky scaling method.
 
         :param cloud_cover: Cloud cover as a polars pl.Series
@@ -341,19 +341,19 @@ class WeatherAPI(ABC):
 
         # construct df with ghi, dni, dhi and fill NaNs with 0
         return (
-            pl.DataFrame({"ghi": ghi, "dni": dni, "dhi": dhi})
+            pd.DataFrame({"ghi": ghi, "dni": dni, "dhi": dhi})
             .fill_null(0)
             .fill_nan(0)
         )
 
     def _cloud_cover_to_irradiance_campbell_norman(
-        self, cloud_cover: pl.DataFrame, times: pd.DatetimeIndex, **kwargs: Any
-    ) -> pl.DataFrame:
+        self, cloud_cover: pd.DataFrame, times: pd.DatetimeIndex, **kwargs: Any
+    ) -> pd.DataFrame:
         """Convert cloud cover to irradiance using the Campbell and Norman model.
 
-        :param cloud_cover: Cloud cover in [%] as a polars pl.DataFrame.
+        :param cloud_cover: Cloud cover in [%] as a polars pd.DataFrame.
         :param **kwargs: Passed to the selected method.
-        :return: Irradiance as a polars pl.DataFrame with columns ghi, dni, dhi.
+        :return: Irradiance as a polars pd.DataFrame with columns ghi, dni, dhi.
         """
         # get clear sky data for provided datetimes
         zen = self.location.get_solarposition(times)[
@@ -369,7 +369,7 @@ class WeatherAPI(ABC):
 
         # construct df with ghi, dni, dhi and fill NaNs with 0
         return (
-            pl.DataFrame(
+            pd.DataFrame(
                 {
                     "ghi": irrads["ghi"],
                     "dni": irrads["dni"],

@@ -1,4 +1,5 @@
 """Webserver unit tests."""
+
 from __future__ import annotations
 
 import datetime as dt
@@ -9,16 +10,16 @@ from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, call, patch
 
 import numpy as np
-import polars as pl
+import pandas as pd
 import pytest
 from fastapi.testclient import TestClient
 
-from pvcast.model.const import HISTORICAL_YEAR_MAPPING
-from pvcast.webserver import app
+from src.pvcast.model.const import HISTORICAL_YEAR_MAPPING
+from src.pvcast.webserver import app
 from tests.const import MOCK_WEATHER_API
 
 if TYPE_CHECKING:
-    from pvcast.weather.weather import WeatherAPI
+    from src.pvcast.weather.weather import WeatherAPI
 
 n_points = int(dt.timedelta(hours=48) / dt.timedelta(hours=1))
 mock_data = pl.DataFrame(
@@ -121,7 +122,9 @@ class CommonForecastTests:
         # build url
         url = f"/{self.fc_type}/{plant_name}/{interval}"
         url += f"/{self.weather_source}" if self.weather_source else ""
-        url += f"?start={urllib.parse.quote(start.isoformat())}" if start else ""
+        url += (
+            f"?start={urllib.parse.quote(start.isoformat())}" if start else ""
+        )
         url += "&" if start and end else ""
         url += "?" if not start and end else ""
         url += f"end={urllib.parse.quote(end.isoformat())}" if end else ""

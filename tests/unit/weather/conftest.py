@@ -1,7 +1,8 @@
 """Weather specific pytest setup."""
+
 from __future__ import annotations
 
-import polars as pl
+import pandas as pd
 
 common_data: dict[str, list[float]] = {
     "temperature": [0, 0.5, 1],

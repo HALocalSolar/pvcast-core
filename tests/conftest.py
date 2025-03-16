@@ -18,13 +18,13 @@ from types import MappingProxyType
 from typing import Any
 
 import numpy as np
-import polars as pl
+import pandas as pd
 import pytest
 import yaml
 from pvlib.location import Location
 
-from pvcast.model.model import PVPlantModel, PVSystemManager
-from pvcast.weather.weather import WeatherAPI
+from src.pvcast.model.model import PVPlantModel, PVSystemManager
+from src.pvcast.weather.weather import WeatherAPI
 
 from .const import LOC_AUS, LOC_EUW, LOC_USW, MOCK_WEATHER_API
 
@@ -181,7 +181,9 @@ micro_system = [
 
 
 @pytest.fixture(params=[string_system, micro_system])
-def basic_config(request: pytest.FixtureRequest) -> list[MappingProxyType[str, Any]]:
+def basic_config(
+    request: pytest.FixtureRequest,
+) -> list[MappingProxyType[str, Any]]:
     """Fixture that creates a basic configuration."""
     var = request.param
     if isinstance(var, list):
@@ -192,11 +194,16 @@ def basic_config(request: pytest.FixtureRequest) -> list[MappingProxyType[str, A
 
 @pytest.fixture
 def pv_sys_mngr(
-    basic_config: list[MappingProxyType[str, Any]], location: Location, altitude: float
+    basic_config: list[MappingProxyType[str, Any]],
+    location: Location,
+    altitude: float,
 ) -> PVSystemManager:
     """Fixture that creates a PVSystemManager."""
     return PVSystemManager(
-        basic_config, lat=location.latitude, lon=location.longitude, alt=altitude
+        basic_config,
+        lat=location.latitude,
+        lon=location.longitude,
+        alt=altitude,
     )
 
 
@@ -279,7 +286,9 @@ class MockWeatherAPI(WeatherAPI):
         self, location: Location, url: str, data: pl.DataFrame, **kwargs: Any
     ) -> None:
         """Initialize the mock class."""
-        super().__init__(location, url, freq_source=dt.timedelta(minutes=60), **kwargs)
+        super().__init__(
+            location, url, freq_source=dt.timedelta(minutes=60), **kwargs
+        )
         self.url = url
         self.data = data
 
@@ -294,12 +303,17 @@ def weather_api(
 ) -> WeatherAPI:
     """Get a weather API object."""
     return MockWeatherAPI(
-        location=location, url=test_url, data=request.param, name=MOCK_WEATHER_API
+        location=location,
+        url=test_url,
+        data=request.param,
+        name=MOCK_WEATHER_API,
     )
 
 
 @pytest.fixture
-def weather_api_fix_loc(request: pytest.FixtureRequest, test_url: str) -> WeatherAPI:
+def weather_api_fix_loc(
+    request: pytest.FixtureRequest, test_url: str
+) -> WeatherAPI:
     """Get a weather API object."""
     return MockWeatherAPI(
         location=Location(51.2, 6.1, "UTC", 0),

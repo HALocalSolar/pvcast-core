@@ -1,11 +1,12 @@
 """Test timestamp (datetime) utilities."""
+
 from __future__ import annotations
 
 from datetime import timedelta
 
 import pytest
 
-from pvcast.util.timestamps import timedelta_to_pl_duration
+from src.pvcast.util.timestamps import timedelta_to_pl_duration
 
 
 class TestUtilTimestamps:
@@ -27,7 +28,9 @@ class TestUtilTimestamps:
             (None, None),
         ],
     )
-    def test_timedelta_to_pl_duration(self, td: timedelta, expected: str) -> None:
+    def test_timedelta_to_pl_duration(
+        self, td: timedelta, expected: str
+    ) -> None:
         """Test timedelta_to_pl_duration function."""
         out = timedelta_to_pl_duration(td)
         assert out == expected

@@ -1,13 +1,12 @@
 """Test webserver helper functions."""
 
-
-import polars as pl
+import pandas as pd
 import pytest
 from pvlib.location import Location
 
-from pvcast.model.model import PVSystemManager
-from pvcast.webserver.models.base import Interval
-from pvcast.webserver.routers.helpers import get_forecast_result_dict
+from src.pvcast.model.model import PVSystemManager
+from src.pvcast.webserver.models.base import Interval
+from src.pvcast.webserver.routers.helpers import get_forecast_result_dict
 from tests.const import LOC_EUW
 
 
@@ -55,7 +54,9 @@ class TestWebserverHelpers:
         location: Location,  # noqa: ARG002 needed for indirect fixture
     ) -> None:
         """Test getting the forecast result dict with wrong fc_type."""
-        with pytest.raises(AttributeError, match="No forecasting algorithm found"):
+        with pytest.raises(
+            AttributeError, match="No forecasting algorithm found"
+        ):
             get_forecast_result_dict(
                 "South", pv_sys_mngr, "wrong_fc_type", Interval.H1, weather_df
             )
@@ -68,9 +69,15 @@ class TestWebserverHelpers:
         location: Location,  # noqa: ARG002 needed for indirect fixture
     ) -> None:
         """Test getting the forecast result dict with wrong plant name."""
-        with pytest.raises(KeyError, match="PV plant wrong_plant_name not found."):
+        with pytest.raises(
+            KeyError, match="PV plant wrong_plant_name not found."
+        ):
             get_forecast_result_dict(
-                "wrong_plant_name", pv_sys_mngr, "clearsky", Interval.H1, weather_df
+                "wrong_plant_name",
+                pv_sys_mngr,
+                "clearsky",
+                Interval.H1,
+                weather_df,
             )
 
     @pytest.mark.parametrize("location", [LOC_EUW], indirect=True)
