@@ -1,4 +1,5 @@
 """Commandline interface for pvcast."""
+
 from __future__ import annotations
 
 import argparse
@@ -33,31 +34,24 @@ def get_args() -> dict[str, Any]:
         type=str,
     )
     parser.add_argument(
-        "-c", "--config", help="Configuration file path.", type=Path, required=True
-    )
-    parser.add_argument(
-        "-s",
-        "--secrets",
-        help="Secrets file path. Must be provided if !secret tags are used.",
+        "-c",
+        "--config",
+        help="Configuration file path.",
+        default="config.yaml",
         type=Path,
     )
     parser.add_argument(
-        "-w",
-        "--workers",
-        help="Number of workers to execute uvicorn server with.",
-        default=1,
-        type=int,
+        "--host", help="API host URL.", default="127.0.0.1", type=str
     )
-    parser.add_argument("--host", help="API host URL.", default="127.0.0.1", type=str)
-    parser.add_argument("--port", help="API host port number.", default=4557, type=int)
+    parser.add_argument(
+        "--port", help="API host port number.", default=4557, type=int
+    )
 
     # parse arguments
     args = vars(parser.parse_args())
 
     # check if config files exist
     os.environ["CONFIG_FILE_PATH"] = str(_check_file_exists(args["config"]))
-    if secrets := args.get("secrets"):
-        os.environ["SECRETS_FILE_PATH"] = str(_check_file_exists(secrets))
 
     # pre-processing of arguments
     args["log_level"] = getattr(logging, args["log_level"].upper(), None)
