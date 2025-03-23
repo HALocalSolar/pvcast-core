@@ -61,8 +61,8 @@ def get(  # pylint: disable=too-many-arguments
 
     # convert dict to dataframe
     weather_dict: dict[str, Any] = weather_api.get_weather(calc_irrads=True)
-    weather_df = pl.DataFrame(weather_dict["data"]).with_columns(
-        pl.col("datetime").str.to_datetime()
+    weather_df = pd.DataFrame(weather_dict["data"]).with_columns(
+        pd.col("datetime").str.to_datetime()
     )
 
     # filter weather data between start and end timestamps

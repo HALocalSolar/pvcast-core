@@ -65,7 +65,7 @@ class ForecastResult:
 
     name: str
     fc_type: ForecastType
-    ac_power: pl.DataFrame | None = field(repr=False, default=None)
+    ac_power: pd.DataFrame | None = field(repr=False, default=None)
 
     def __post_init__(self) -> None:
         """Validate the ForecastResult object."""
@@ -75,7 +75,7 @@ class ForecastResult:
         if "datetime" not in self.ac_power.columns:
             msg = "AC power data must have a 'datetime' column."
             raise ValueError(msg)
-        if self.ac_power["datetime"].dtype != pl.Datetime:
+        if self.ac_power["datetime"].dtype != dt.datetime:
             msg = f"Datetime column must have dtype datetime.datetime. Got {self.ac_power['datetime'].dtype}."
             raise ValueError(msg)
         if self.ac_power.null_count().sum_horizontal().item() > 0:
@@ -84,7 +84,7 @@ class ForecastResult:
         if "ac_power" not in self.ac_power.columns:
             msg = "AC power data must have a 'ac_power' column."
             raise ValueError(msg)
-        if self.ac_power["ac_power"].dtype != pl.Int64:
+        if self.ac_power["ac_power"].dtype != float:
             msg = f"AC power column must have dtype int64. Got {self.ac_power['ac_power'].dtype}."
             raise ValueError(msg)
 
@@ -118,7 +118,7 @@ class ForecastResult:
         fc_result_cpy.ac_power = (
             fc_result_cpy.ac_power.sort(by="datetime")  # type: ignore[union-attr]
             .upsample(time_column="datetime", every=freq, maintain_order=True)
-            .select(pl.all().interpolate().forward_fill())
+            .select(pd.all().interpolate().forward_fill())
         )
         return fc_result_cpy
 
@@ -161,7 +161,7 @@ class ForecastResult:
         msg = f"Invalid time string: {time_str}."
         raise ValueError(msg)
 
-    def energy(self, freq: str = "1d") -> pl.DataFrame:
+    def energy(self, freq: str = "1d") -> pd.DataFrame:
         """Calculate the AC energy output of the PV plant.
 
         We assume that within the interval, the power output is constant. Therefore we will not use numerical
@@ -169,7 +169,7 @@ class ForecastResult:
         (and sum it up if freq > 1H)
 
         :param freq: The frequency of the energy output. See polars docs for valid options.
-        :return: A pl.Series with the energy output of the PV plant.
+        :return: A pd.Series with the energy output of the PV plant.
         """
         if self.ac_power is None:
             msg = "AC power output is not available, cannot calculate energy. Run simulation first."
@@ -185,15 +185,15 @@ class ForecastResult:
 
         # compute the conversion factor from power to energy
         conversion_factor = self.frequency / SECONDS_PER_HOUR
-        ac_energy: pl.DataFrame = self.ac_power.select(
-            pl.col("datetime"), pl.col("ac_power") * conversion_factor
+        ac_energy: pd.DataFrame = self.ac_power.select(
+            pd.col("datetime"), pd.col("ac_power") * conversion_factor
         )
 
         # compute the energy output per period
         return (
             ac_energy.sort(by="datetime")
             .group_by_dynamic("datetime", every=freq)
-            .agg(pl.col("ac_power").sum().alias("ac_energy").cast(pl.Int64))
+            .agg(pd.col("ac_power").sum().alias("ac_energy").cast(pd.Int64))
         )
 
 
@@ -213,7 +213,7 @@ class PowerEstimate(ABC):
         """Post init method."""
         self._model_attrs = MODEL_ATTRS[self.fc_type]
 
-    def run(self, weather_df: pl.DataFrame | None = None) -> ForecastResult:
+    def run(self, weather_df: pd.DataFrame | None = None) -> ForecastResult:
         """Run power estimate and store results.
 
         :param weather_df: The weather data or datetimes to forecast for.
@@ -227,12 +227,12 @@ class PowerEstimate(ABC):
         weather_df_pd.index = weather_df_pd.index.astype("datetime64[ns, UTC]")
 
         # run the forecast for each model chain
-        result_df = pl.DataFrame(
+        result_df = pd.DataFrame(
             weather_df_pd.index.to_numpy(dtype=str),
             schema=["datetime"],
         )
         result_df = result_df.with_columns(
-            pl.col("datetime").str.to_datetime()
+            pd.col("datetime").str.to_datetime()
         )
 
         for model_chain in self.pv_plant.models:
@@ -244,14 +244,14 @@ class PowerEstimate(ABC):
             model_chain.run_model(weather_df_pd)
 
             # add the results to the results DataFrame
-            ac: pl.Series = pl.from_pandas(model_chain.results.ac, include_index=False)  # type: ignore[assignment]
+            ac: pd.Series = pd.from_pandas(model_chain.results.ac, include_index=False)  # type: ignore[assignment]
             result_df = result_df.with_columns(ac.alias(model_chain.name))
 
         # sum the results of all model chains horizontally and return the ForecastResult
         results = result_df.select("datetime").with_columns(
-            result_df.select(pl.exclude("datetime"))
+            result_df.select(pd.exclude("datetime"))
             .sum_horizontal()
-            .cast(pl.Int64)
+            .cast(pd.Int64)
             .alias("ac_power")
         )
         return ForecastResult(
@@ -260,8 +260,8 @@ class PowerEstimate(ABC):
 
     @abstractmethod
     def _prepare_weather(
-        self, weather_df: pl.DataFrame | None = None
-    ) -> pl.DataFrame:
+        self, weather_df: pd.DataFrame | None = None
+    ) -> pd.DataFrame:
         """Prepare weather data for the forecast. This method should be implemented by subclasses.
 
         When calling this function it may be optional or mandatory to provide weather
@@ -273,10 +273,10 @@ class PowerEstimate(ABC):
 
     @staticmethod
     def _add_precipitable_water(
-        weather_df: pl.DataFrame,
+        weather_df: pd.DataFrame,
         temp_col: str = "temperature",
         rh_col: str = "humidity",
-    ) -> pl.DataFrame:
+    ) -> pd.DataFrame:
         """Add a precipitable_water column to the weather dataframe.
 
         Gueymard94_pw alculates precipitable water (cm) from ambient air temperature (C) and
@@ -310,7 +310,7 @@ class PowerEstimate(ABC):
         humidity = weather_df[rh_col].to_numpy()
         precipitable_water = gueymard94_pw(temperature, humidity)
         return weather_df.with_columns(
-            pl.Series("precipitable_water", precipitable_water)
+            pd.Series("precipitable_water", precipitable_water)
         )
 
 
@@ -321,8 +321,8 @@ class Live(PowerEstimate):
     fc_type: ForecastType = field(default=ForecastType.LIVE)
 
     def _prepare_weather(
-        self, weather_df: pl.DataFrame | None = None
-    ) -> pl.DataFrame:
+        self, weather_df: pd.DataFrame | None = None
+    ) -> pd.DataFrame:
         if weather_df is None:
             msg = "Must provide weather data."
             raise ValueError(msg)
@@ -336,8 +336,8 @@ class Clearsky(PowerEstimate):
     fc_type: ForecastType = field(default=ForecastType.CLEARSKY)
 
     def _prepare_weather(
-        self, weather_df: pl.DataFrame | None = None
-    ) -> pl.DataFrame:
+        self, weather_df: pd.DataFrame | None = None
+    ) -> pd.DataFrame:
         if weather_df is None:
             msg = "Must provide weather data."
             raise ValueError(msg)
@@ -346,7 +346,7 @@ class Clearsky(PowerEstimate):
         dt_strings = pd.DatetimeIndex(
             weather_df["datetime"].dt.strftime(DT_FORMAT)
         )
-        cs = pl.from_pandas(self.location.get_clearsky(dt_strings))
+        cs = pd.from_pandas(self.location.get_clearsky(dt_strings))
         return weather_df.with_columns([cs["ghi"], cs["dni"], cs["dhi"]])
 
 
@@ -368,15 +368,15 @@ class Historical(PowerEstimate):
         )
 
     def _prepare_weather(
-        self, weather_df: pl.DataFrame | None = None
-    ) -> pl.DataFrame:
+        self, weather_df: pd.DataFrame | None = None
+    ) -> pd.DataFrame:
         # if the PVGIS data file does not exist, retrieve it from the API and store it
-        tmy_data: pl.LazyFrame
+        tmy_data: pd.LazyFrame
         if not self._pvgis_data_path.exists():
             self._store_pvgis_data_api()
 
         # scan data from CSV file
-        tmy_data = pl.scan_csv(self._pvgis_data_path)
+        tmy_data = pd.scan_csv(self._pvgis_data_path)
 
         # if there are no specifically requested dates, return the entire TMY dataset
         if weather_df is None:
@@ -387,11 +387,11 @@ class Historical(PowerEstimate):
         upper = weather_df["datetime"].max().replace(year=HISTORICAL_YEAR_MAPPING)  # type: ignore[union-attr, call-arg]
         return (
             tmy_data.filter(
-                (pl.col("datetime").str.to_datetime() >= lower)
-                & (pl.col("datetime").str.to_datetime() <= upper)
+                (pd.col("datetime").str.to_datetime() >= lower)
+                & (pd.col("datetime").str.to_datetime() <= upper)
             )
             .collect()
-            .cast({"datetime": pl.Datetime(time_unit="ms", time_zone="UTC")})
+            .cast({"datetime": pd.Datetime(time_unit="ms", time_zone="UTC")})
         )
 
     def _store_pvgis_data_api(self) -> None:
@@ -416,7 +416,7 @@ class Historical(PowerEstimate):
         )
 
         # convert the data to a polars DataFrame
-        tmy_df: pl.DataFrame = pl.from_pandas(
+        tmy_df: pd.DataFrame = pd.from_pandas(
             tmy_data
         )  # fc_type: ignore[assignment]
         tmy_df = tmy_df.rename(
@@ -432,7 +432,7 @@ class Historical(PowerEstimate):
 
         # add datetime column
         tmy_df = tmy_df.with_columns(
-            pl.datetime_range(
+            pd.datetime_range(
                 dt.datetime(
                     HISTORICAL_YEAR_MAPPING, 1, 1, 0, tzinfo=dt.timezone.utc
                 ),
@@ -444,7 +444,7 @@ class Historical(PowerEstimate):
                 time_zone="UTC",
             )
             .slice(0, len(tmy_df))
-            .cast(pl.Datetime(time_unit="ms", time_zone="UTC"))
+            .cast(pd.Datetime(time_unit="ms", time_zone="UTC"))
             .alias("datetime")
         ).select(
             [

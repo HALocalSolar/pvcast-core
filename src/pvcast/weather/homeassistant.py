@@ -28,12 +28,12 @@ class WeatherAPIHomeassistant(WeatherAPI):
         """Initialize the Home Assistant API interface."""
         self._hass_api = HomeAssistantAPI(self.url, token, entity_id)
 
-    def retrieve_new_data(self) -> pl.DataFrame:
+    def retrieve_new_data(self) -> pd.DataFrame:
         """Retrieve new weather data from the API.
 
         :return: Response from the API
         """
-        weather_df: pl.DataFrame = pl.from_dicts(self._hass_api.forecast)
+        weather_df: pd.DataFrame = pd.from_dicts(self._hass_api.forecast)
         weather_df = weather_df.rename({"cloud_coverage": "cloud_cover"})
 
         # select relevant columns
@@ -53,7 +53,7 @@ class WeatherAPIHomeassistant(WeatherAPI):
 
         # convert datetime column to datetime
         weather_df = weather_df.with_columns(
-            pl.col("datetime").str.to_datetime()
+            pd.col("datetime").str.to_datetime()
         )
 
         # check that timezone is in UTC, if not, convert it
@@ -63,6 +63,6 @@ class WeatherAPIHomeassistant(WeatherAPI):
                 "HA weather data timezone is not UTC but: %s", time_zone
             )
             weather_df = weather_df.with_columns(
-                pl.col("datetime").cast(pl.Datetime(time_zone=dt.timezone.utc))
+                pd.col("datetime").cast(pd.Datetime(time_zone=dt.timezone.utc))
             )
         return weather_df

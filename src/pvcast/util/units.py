@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Callable
 
 # Define a type for the conversion functions
-ConversionFunc = Callable[[pl.Series], pl.Series]
+ConversionFunc = Callable[[pd.Series], pd.Series]
 
 # temperature conversion functions ("°C", "°F", "C", "F")
 TEMP_CONV_DICT = {
@@ -43,15 +43,15 @@ CONV_DICT: dict[str, dict[str, ConversionFunc]] = {
 }
 
 
-def convert_unit(data: pl.Series, from_unit: str, to_unit: str) -> pl.Series:
-    """Convert units of a pl.Series.
+def convert_unit(data: pd.Series, from_unit: str, to_unit: str) -> pd.Series:
+    """Convert units of a pd.Series.
 
-    :param data: The data to convert. This should be a pl.Series.
+    :param data: The data to convert. This should be a pd.Series.
     :param to_unit: The unit to convert to.
     :return: Data with applied unit conversion.
     """
-    if not isinstance(data, pl.Series):
-        msg = "Data must be a pl.Series."
+    if not isinstance(data, pd.Series):
+        msg = "Data must be a pd.Series."
         raise TypeError(msg)
 
     # remove degree symbol from units if present

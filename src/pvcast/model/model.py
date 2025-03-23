@@ -129,7 +129,7 @@ class PVPlantModel:
         arrays: list[dict[str, str | int]] = config["arrays"]
 
         # get inverter params from the SAM database
-        inv_df: pl.DataFrame = inv_param.filter(
+        inv_df: pd.DataFrame = inv_param.filter(
             index=config["inverter"]
         ).collect()
         if inv_df.is_empty():
@@ -140,10 +140,10 @@ class PVPlantModel:
         )
 
         # get module params from the SAM database
-        modules = pl.Series(
+        modules = pd.Series(
             [array["module"] for array in arrays]
         ).unique()  # pylint: disable=assignment-from-no-return
-        mod_df: pl.DataFrame = mod_param.filter(index=modules).collect()
+        mod_df: pd.DataFrame = mod_param.filter(index=modules).collect()
 
         if len(modules) != len(mod_df):
             found_modules = set(mod_df["index"])
@@ -321,8 +321,8 @@ class PVSystemManager:
         )
 
         # load the CEC databases as polars LazyFrames which can
-        inv_param: pd.DataFrame = pl.scan_csv(inv_path)
-        mod_param: pd.DataFrame = pl.scan_csv(mod_path)
+        inv_param: pd.DataFrame = pd.scan_csv(inv_path)
+        mod_param: pd.DataFrame = pd.scan_csv(mod_path)
         self._pv_plants = self._create_pv_plants(inv_param, mod_param)
         _LOGGER.info(
             "Created PV system manager with %s PV plants.",

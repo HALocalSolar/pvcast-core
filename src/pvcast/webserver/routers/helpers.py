@@ -20,7 +20,7 @@ def get_forecast_result_dict(
     pv_system_mngr: PVSystemManager,
     fc_type: str,
     interval: Interval,
-    weather_df: pl.DataFrame,
+    weather_df: pd.DataFrame,
 ) -> dict[str, Any]:
     """Use the weather data to compute the estimated PV output power in Watts.
 
@@ -48,7 +48,7 @@ def get_forecast_result_dict(
     )
 
     # loop over all PV plants and compute the estimated power output
-    ac_w_period = pl.DataFrame()
+    ac_w_period = pd.DataFrame()
     for pv_plant in pv_plant_names:
         _LOGGER.info("Calculating PV output for plant: %s", pv_plant)
 
@@ -70,16 +70,16 @@ def get_forecast_result_dict(
         )
         ac_w_period = ac_w_period.with_columns(
             ac_w_period[f"watt_{pv_plant}"]
-            .cast(pl.Float64)
+            .cast(pd.Float64)
             .round(0)
             .clip(0)
-            .cast(pl.Int64)
+            .cast(pd.Int64)
         )
 
     # horizontally sum the power columns
     ac_w_period = ac_w_period.select(
         "datetime",
-        pl.sum_horizontal(pl.exclude("datetime")).cast(pl.Int64).alias("watt"),
+        pd.sum_horizontal(pd.exclude("datetime")).cast(pd.Int64).alias("watt"),
     )
 
     # cumulatively sum the power column
@@ -89,7 +89,7 @@ def get_forecast_result_dict(
 
     # truncate datetimes to the requested interval
     ac_w_period = ac_w_period.with_columns(
-        pl.col("datetime").dt.truncate(interval.value)
+        pd.col("datetime").dt.truncate(interval.value)
     )
 
     # construct the response dict
@@ -101,6 +101,6 @@ def get_forecast_result_dict(
         "interval": interval.value,
         "timezone": "UTC",
         "period": ac_w_period.with_columns(
-            pl.col("datetime").dt.strftime(DT_FORMAT)
+            pd.col("datetime").dt.strftime(DT_FORMAT)
         ).to_dicts(),
     }

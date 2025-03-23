@@ -31,14 +31,14 @@ class WeatherAPIClearOutside(WeatherAPI):
         lon = str(round(self.location.longitude, 2))
         self.url = urljoin(_url_base, f"{lat}/{lon}")
 
-    def retrieve_new_data(self) -> pl.DataFrame:
+    def retrieve_new_data(self) -> pd.DataFrame:
         """Retrieve weather data by scraping it from the clear outside website."""
         response = requests.get(
             self.url, timeout=int(self.timeout.total_seconds())
         )
 
         # response (source) data bucket
-        weather_df = pl.DataFrame()
+        weather_df = pd.DataFrame()
 
         n_days = int(self.max_forecast_days / dt.timedelta(days=1))
 
@@ -58,7 +58,7 @@ class WeatherAPIClearOutside(WeatherAPI):
 
             # insert the data into the source data bucket
             weather_df = weather_df.vstack(
-                data.with_columns(pl.all().cast(pl.Float64))
+                data.with_columns(pd.all().cast(pd.Float64))
             )
 
         # add the datetime column
@@ -70,11 +70,11 @@ class WeatherAPIClearOutside(WeatherAPI):
         weather_df = weather_df.interpolate()
         return weather_df.drop_nulls()
 
-    def _find_elements(self, table: BeautifulSoup) -> pl.DataFrame:
+    def _find_elements(self, table: BeautifulSoup) -> pd.DataFrame:
         """Find weather data elements in the table.
 
         :param table: The table to search.
-        :return: Weather data pl.DataFrame for one day (24 hours).
+        :return: Weather data pd.DataFrame for one day (24 hours).
         """
         list_names = table.find_all(class_="fc_detail_label")
         list_tables = table.find_all("ul")[1:]
@@ -85,25 +85,25 @@ class WeatherAPIClearOutside(WeatherAPI):
         list_tables = [list_tables[i] for i in sel_cols]
 
         # building the raw DF container
-        raw_data = pl.DataFrame({"index": range(24)})
+        raw_data = pd.DataFrame({"index": range(24)})
         for count_col, col in enumerate(col_names):
             list_rows = list_tables[count_col].find_all("li")
 
             # create empty column and fill it with data up len(column_data)
-            column_data = pl.Series(
+            column_data = pd.Series(
                 col, [float(row.get_text()) for row in list_rows]
             )
-            raw_data = pl.concat(
+            raw_data = pd.concat(
                 [raw_data, column_data.to_frame()], how="horizontal"
             )
 
         # rename columns
         raw_data = raw_data.select(
-            pl.col("Total Clouds (% Sky Obscured)").alias("cloud_cover"),
-            pl.col("Wind Speed/Direction (mph)").alias("wind_speed"),
-            pl.col("Temperature (°C)").alias("temperature"),
-            pl.col("Relative Humidity (%)").alias("humidity"),
+            pd.col("Total Clouds (% Sky Obscured)").alias("cloud_cover"),
+            pd.col("Wind Speed/Direction (mph)").alias("wind_speed"),
+            pd.col("Temperature (°C)").alias("temperature"),
+            pd.col("Relative Humidity (%)").alias("humidity"),
         )
 
         # convert wind speed to m/s
-        return raw_data.with_columns(pl.col("wind_speed") * 0.44704)
+        return raw_data.with_columns(pd.col("wind_speed") * 0.44704)

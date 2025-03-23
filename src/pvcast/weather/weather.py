@@ -133,7 +133,7 @@ class WeatherAPI(ABC):
         return self.start_forecast + self.max_forecast_days
 
     @property
-    def source_dates(self) -> pl.Series:
+    def source_dates(self) -> pd.Series:
         """Get the datetime index with datetimes to forecast for."""
         return self.get_source_dates(
             self.start_forecast, self.end_forecast, self.freq_source
@@ -142,9 +142,9 @@ class WeatherAPI(ABC):
     @staticmethod
     def get_source_dates(
         start: dt.datetime, end: dt.datetime, inter: dt.timedelta
-    ) -> pl.Series:
+    ) -> pd.Series:
         """Get the datetime index with datetimes to forecast for."""
-        return pl.datetime_range(
+        return pd.datetime_range(
             start, end, inter, time_zone=str(dt.timezone.utc), eager=True
         )
 
@@ -190,9 +190,9 @@ class WeatherAPI(ABC):
         if not processed_data["datetime"].is_sorted():
             msg = "Processed data is not sorted."
             raise WeatherAPIError(msg)
-        if processed_data["datetime"].dtype != pl.Datetime:
+        if processed_data["datetime"].dtype != pd.Datetime:
             processed_data = processed_data.with_columns(
-                pl.col("datetime").str.to_datetime()
+                pd.col("datetime").str.to_datetime()
             )
 
         # check for gaps in the datetime index
@@ -208,7 +208,7 @@ class WeatherAPI(ABC):
         # check for NaN values
         if (
             processed_data.with_columns(
-                pl.exclude("datetime").is_nan().any(ignore_nulls=True)
+                pd.exclude("datetime").is_nan().any(ignore_nulls=True)
             )
             .sum()
             .sum_horizontal()
@@ -220,7 +220,7 @@ class WeatherAPI(ABC):
 
         # check for null values
         if (
-            processed_data.with_columns(pl.exclude("datetime").is_null().any())
+            processed_data.with_columns(pd.exclude("datetime").is_null().any())
             .sum()
             .sum_horizontal()
             .item()
@@ -231,17 +231,17 @@ class WeatherAPI(ABC):
 
         # cut off the data that exceeds max_forecast_days
         processed_data = processed_data.filter(
-            pl.col("datetime") < self.end_forecast
+            pd.col("datetime") < self.end_forecast
         )
         _LOGGER.debug("Processed weather data: \n%s", processed_data)
 
         # set data types
         processed_data = processed_data.cast(
             {
-                "cloud_cover": pl.Float64,
-                "humidity": pl.Int64,
-                "temperature": pl.Float64,
-                "wind_speed": pl.Float64,
+                "cloud_cover": pd.Float64,
+                "humidity": pd.Int64,
+                "temperature": pd.Float64,
+                "wind_speed": pd.Float64,
             }
         )
 
@@ -285,7 +285,7 @@ class WeatherAPI(ABC):
 
         NB: Code copied from pvlib.forecast as the pvlib forecast module is deprecated as of pvlib 0.9.1!
 
-        :param cloud_cover: Cloud cover as a polars pl.Series
+        :param cloud_cover: Cloud cover as a polars pd.Series
         :param how: Selects the method for conversion. Can be one of clearsky_scaling or campbell_norman.
         :param **kwargs: Passed to the selected method.
         :return: Irradiance, columns include ghi, dni, dhi.
@@ -322,14 +322,14 @@ class WeatherAPI(ABC):
     ) -> pd.DataFrame:
         """Convert cloud cover to irradiance using the clearsky scaling method.
 
-        :param cloud_cover: Cloud cover as a polars pl.Series
+        :param cloud_cover: Cloud cover as a polars pd.Series
         :param **kwargs: Passed to the selected method.
         :return: Irradiance, columns include ghi, dni, dhi.
         """
         # get clear sky data for provided datetimes
         solpos = self.location.get_solarposition(times)
         clear_sky = self.location.get_clearsky(times, "ineichen", solpos)
-        cover = pl.Series.to_pandas(cloud_cover["cloud_cover"])
+        cover = pd.Series.to_pandas(cloud_cover["cloud_cover"])
 
         # convert cloud cover to GHI/DNI/DHI
         ghi = self._cloud_cover_to_ghi_linear(
@@ -385,9 +385,9 @@ class WeatherAPI(ABC):
     ) -> np.ndarray[float, Any]:
         """Convert cloud cover (percentage) to atmospheric transmittance using a linear model.
 
-        :param cloud_cover: Cloud cover in [%] as a polars pl.Series.
+        :param cloud_cover: Cloud cover in [%] as a polars pd.Series.
         :param offset: Determines the maximum transmittance for the linear model.
-        :return: Atmospheric transmittance as a polars pl.Series.
+        :return: Atmospheric transmittance as a polars pd.Series.
         """
         return ((100.0 - cloud_cover) / 100.0) * offset
 

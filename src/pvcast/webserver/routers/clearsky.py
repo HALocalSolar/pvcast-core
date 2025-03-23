@@ -52,7 +52,7 @@ def get(  # pylint: disable=too-many-arguments
     # build the datetime index
     datetimes = weather_api.get_source_dates(start, end, dt.timedelta(hours=1))
     # convert datetimes to dataframe
-    weather_df = pl.DataFrame(datetimes.alias("datetime"))
+    weather_df = pd.DataFrame(datetimes.alias("datetime"))
 
     # get the PV power output
     response_dict = get_forecast_result_dict(

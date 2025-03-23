@@ -18,7 +18,7 @@
 #     def test_get_forecast_result_dict(
 #         self,
 #         pv_sys_mngr: PVSystemManager,
-#         weather_df: pl.DataFrame,
+#         weather_df: pd.DataFrame,
 #         fc_type: str,
 #         location: Location,  # noqa: ARG002 needed for indirect fixture
 #     ) -> None:
@@ -50,7 +50,7 @@
 #     def test_get_forecast_result_dict_wrong_fc_type(
 #         self,
 #         pv_sys_mngr: PVSystemManager,
-#         weather_df: pl.DataFrame,
+#         weather_df: pd.DataFrame,
 #         location: Location,  # noqa: ARG002 needed for indirect fixture
 #     ) -> None:
 #         """Test getting the forecast result dict with wrong fc_type."""
@@ -65,7 +65,7 @@
 #     def test_get_forecast_result_dict_wrong_plant_name(
 #         self,
 #         pv_sys_mngr: PVSystemManager,
-#         weather_df: pl.DataFrame,
+#         weather_df: pd.DataFrame,
 #         location: Location,  # noqa: ARG002 needed for indirect fixture
 #     ) -> None:
 #         """Test getting the forecast result dict with wrong plant name."""
@@ -84,7 +84,7 @@
 #     def test_get_forecast_result_dict_pv_plants_list_empty(
 #         self,
 #         pv_sys_mngr: PVSystemManager,
-#         weather_df: pl.DataFrame,
+#         weather_df: pd.DataFrame,
 #         location: Location,  # noqa: ARG002 needed for indirect fixture
 #     ) -> None:
 #         """Test getting the forecast result dict with empty pv_plants list."""
@@ -103,5 +103,5 @@
 #         """Test getting the forecast result dict with empty weather_df."""
 #         with pytest.raises(ValueError, match="Weather dataframe is empty."):
 #             get_forecast_result_dict(
-#                 "South", pv_sys_mngr, "clearsky", Interval.H1, pl.DataFrame()
+#                 "South", pv_sys_mngr, "clearsky", Interval.H1, pd.DataFrame()
 #             )

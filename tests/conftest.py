@@ -37,17 +37,16 @@ def test_url() -> str:
 
 
 @pytest.fixture
-def weather_df() -> pl.DataFrame:
+def weather_df() -> pd.DataFrame:
     """Fixture for a basic pvlib input weather dataframe."""
     n_points = int(dt.timedelta(days=2) / dt.timedelta(hours=1))
-    return pl.DataFrame(
+    return pd.DataFrame(
         {
-            "datetime": pl.datetime_range(
+            "datetime": pd.date_range(
                 dt.date(2022, 1, 1),
                 dt.date(2022, 1, 3),
-                "1h",
-                eager=True,
-                time_zone="UTC",
+                freq="1h",
+                tz="UTC",
             )[0:n_points],
             "cloud_cover": list(np.linspace(20, 60, n_points)),
             "wind_speed": list(np.linspace(0, 10, n_points)),
@@ -262,8 +261,8 @@ def pv_plant_model(
     return PVPlantModel(
         basic_config[0],
         location=location,
-        inv_param=pl.LazyFrame(inv_params),
-        mod_param=pl.LazyFrame(mod_params),
+        inv_param=pd.LazyFrame(inv_params),
+        mod_param=pd.LazyFrame(mod_params),
     )
 
 
@@ -279,7 +278,7 @@ class MockWeatherAPI(WeatherAPI):
     """Mock the WeatherAPI class."""
 
     def __init__(
-        self, location: Location, url: str, data: pl.DataFrame, **kwargs: Any
+        self, location: Location, url: str, data: pd.DataFrame, **kwargs: Any
     ) -> None:
         """Initialize the mock class."""
         super().__init__(
@@ -288,7 +287,7 @@ class MockWeatherAPI(WeatherAPI):
         self.url = url
         self.data = data
 
-    def retrieve_new_data(self) -> pl.DataFrame:
+    def retrieve_new_data(self) -> pd.DataFrame:
         """Retrieve new data from the API."""
         return self.data
 
