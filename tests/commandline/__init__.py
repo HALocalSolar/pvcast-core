@@ -1,1 +1,0 @@
-"""Init the commandline tests."""
