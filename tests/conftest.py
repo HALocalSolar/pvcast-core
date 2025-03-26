@@ -29,9 +29,18 @@ class MockWeatherAPI(WeatherAPI):
         """Initialize the mock class."""
         super().__init__(location, **kwargs)
 
-    def get_weather(self) -> pd.DataFrame:
+    def retrieve_new_data(self) -> pd.DataFrame:
         """Retrieve new data from the API."""
         return pd.DataFrame()
+
+    @property
+    def input_schema(self) -> dict[str, str]:
+        return {
+            "cloud_cover": "pint[dimensionless]",
+            "temperature": "pint[celsius]",
+            "humidity": "pint[dimensionless]",
+            "wind_speed": "pint[m/s]",
+        }
 
 
 @pytest.fixture(params=LOCATIONS)

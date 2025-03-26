@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import datetime as dt
+
 import pandas as pd
 import pytest
 from pvlib.location import Location
@@ -28,9 +30,28 @@ class CommonWeatherTests:
 class WeatherProviderTests:
     """Test the weather provider API functionality."""
 
+    def test_api_init(self, weather_api: WeatherAPI) -> None:
+        """Test the WeatherAPI initialization."""
+        assert weather_api is not None
+        assert isinstance(weather_api, WeatherAPI)
+        assert isinstance(weather_api.location, Location)
+        assert isinstance(weather_api.timeout, dt.timedelta)
+        assert isinstance(weather_api.input_schema, dict)
+        # check that all required keys are present
+        assert all(
+            key in weather_api.input_schema
+            for key in ["cloud_cover", "temperature", "humidity", "wind_speed"]
+        )
+        assert all(
+            isinstance(value, str)
+            for value in weather_api.input_schema.values()
+        )
+        _ = weather_api.get_weather()
+
     def test_get_weather(self, weather_api: WeatherAPI) -> None:
         """Test the get_weather function."""
         df = weather_api.get_weather()
+        print(df)
         # weather = pd.DataFrame.from_dict(data)
         # assert isinstance(weather, pd.DataFrame)
         # # assert weather.null_count().sum_horizontal().item() == 0

@@ -5,9 +5,10 @@ from __future__ import annotations
 import datetime as dt
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 import pandas as pd
+import voluptuous as vol
 from pvlib.location import Location
 
 from .const import WEATHER_SCHEMA
@@ -26,13 +27,53 @@ class WeatherAPI(ABC):
         """Class constructor."""
         self.timeout = timeout
         self.location = location
+        self.output_schema = {
+            "cloud_cover": "dimensionless",
+            "temperature": "celsius",
+            "humidity": "dimensionless",
+            "wind_speed": "m/s",
+        }
 
     @abstractmethod
+    def retrieve_new_data(self) -> pd.DataFrame:
+        """Retrieve new weather data from the API.
+
+        :return: Response from the API
+        """
+
+    @property
+    @abstractmethod
+    def input_schema(self) -> dict[str, str]:
+        """The input schema should specify the expected units for each of the
+        response parameters. This is used to validate the response from the API
+        and to convert to a common unit system.
+        """
+
     def get_weather(self) -> pd.DataFrame:
         """Retrieve new weather data from the API.
 
         :return: Response from the API
         """
+        _LOGGER.debug("Retrieving new weather data from %s", self.__class__)
+        df = self.retrieve_new_data()
+
+        # convert units to common unit system
+        for key, value in self.output_schema.items():
+            df[key] = df[key].pint.to(value)
+
+        # convert to dictionary and validate schema
+        data_list = df.to_dict("records")
+        try:
+            validated_data: dict[str, Any] = {
+                "source": "",
+                "interval": "",
+                "data": data_list,
+            }
+            WEATHER_SCHEMA(validated_data)
+        except vol.Invalid as exc:
+            msg = f"Error validating weather data: {validated_data}"
+            raise ValueError(msg) from exc
+        return df
 
 
 class WeatherAPIFactory:

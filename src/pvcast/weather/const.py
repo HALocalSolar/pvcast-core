@@ -25,6 +25,9 @@ WEATHER_SCHEMA = vol.Schema(
                 vol.Required("wind_speed"): vol.All(
                     vol.Coerce(float), vol.Range(min=0)
                 ),
+                vol.Optional("wind_direction"): vol.All(
+                    vol.Coerce(float), vol.Range(min=0)
+                ),
                 vol.Required("cloud_cover"): vol.All(
                     vol.Coerce(float), vol.Range(min=0, max=100)
                 ),

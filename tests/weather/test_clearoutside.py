@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-import datetime as dt
 from pathlib import Path
-from typing import TYPE_CHECKING, Generator
+from typing import Generator
 from urllib.parse import urljoin
 
-import pandas as pd
 import pytest
 import responses
 from pvlib.location import Location

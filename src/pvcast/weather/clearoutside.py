@@ -7,6 +7,7 @@ import logging
 from urllib.parse import urljoin
 
 import pandas as pd
+import pint_pandas  # TODO: ignore unused import
 import requests
 from bs4 import BeautifulSoup
 from pvlib.location import Location
@@ -33,43 +34,51 @@ class ClearOutside(WeatherAPI):
         lon = str(round(self.location.longitude, 2))
         self.url = urljoin(self._url_base, f"{lat}/{lon}")
 
-    def get_weather(self) -> pd.DataFrame:
+    def retrieve_new_data(self) -> pd.DataFrame:
         """Retrieve weather data."""
+        _LOGGER.debug("Retrieving new weather data from %s", self.url)
         response = requests.get(
             self.url, timeout=int(self.timeout.total_seconds())
         )
+        _LOGGER.debug("Response status code: %s", response.status_code)
 
         weather_data_list = []
-        n_days = 1  # Adjust as needed
-
         soup = BeautifulSoup(response.content, "lxml")
 
-        for day_int in range(n_days):
-            result = soup.select(f"#day_{day_int}")
-            if len(result) != 1:
-                _LOGGER.debug("No data for day %s, breaking loop.", day_int)
-                break
+        # loop over all forecast days in the HTML
+        for day_div in soup.find_all("div", class_="fc_day"):
+            daily_df = self._find_elements(day_div)
 
-            table = result[0]
-            daily_df = self._find_elements(table)
+            if daily_df.empty:
+                continue
 
-            # Append daily data
             weather_data_list.append(daily_df)
 
         if not weather_data_list:
             return pd.DataFrame()
 
-        weather_df = pd.concat(weather_data_list, ignore_index=True)
+        df = pd.concat(weather_data_list, ignore_index=True)
 
-        # Interpolate missing values and drop remaining NaNs
-        weather_df = weather_df.interpolate().dropna()
+        # interpolate and drop any remaining NaNs
+        df = df.interpolate().dropna()
 
-        return weather_df
+        # convert to pint datatype
+        schema = self.input_schema
+        df = df.astype(schema)
+        return df
+
+    @property
+    def input_schema(self) -> dict[str, str]:
+        return {
+            "cloud_cover": "pint[dimensionless]",
+            "temperature": "pint[celsius]",
+            "humidity": "pint[dimensionless]",
+            "wind_speed": "pint[mph]",
+        }
 
     def _find_elements(self, table: BeautifulSoup) -> pd.DataFrame:
         """Find weather data elements in the table for one day (24 hours)."""
 
-        # Helper function
         def extract_hourly_values(detail_rows, label_text):
             for row in detail_rows:
                 label = row.find("span", class_="fc_detail_label").get_text(
@@ -81,25 +90,14 @@ class ClearOutside(WeatherAPI):
                     ]
             return []
 
-        # Get detail rows
         detail_rows = table.select("div.fc_detail_row")
-        print(detail_rows)
 
-        # Extract relevant parameters
         total_clouds = extract_hourly_values(
             detail_rows, "Total Clouds (% Sky Obscured)"
         )
         temp = extract_hourly_values(detail_rows, "Temperature (°C)")
         rh = extract_hourly_values(detail_rows, "Relative Humidity (%)")
-        fog = extract_hourly_values(detail_rows, "Fog (%)")
-        precip_prob = extract_hourly_values(
-            detail_rows, "Precipitation Probability (%)"
-        )
-        precip_amt = extract_hourly_values(
-            detail_rows, "Precipitation Amount (mm)"
-        )
 
-        # Wind speed and direction
         wind_speeds = []
         wind_dirs = []
         for row in detail_rows:
@@ -118,7 +116,9 @@ class ClearOutside(WeatherAPI):
                     wind_dirs.append(direction)
                 break
 
-        # Build DataFrame
+        if not total_clouds or not temp or not rh or not wind_speeds:
+            return pd.DataFrame()  # Return empty if any key data is missing
+
         raw_data = pd.DataFrame(
             {
                 "cloud_cover": pd.to_numeric(total_clouds, errors="coerce"),
@@ -127,8 +127,5 @@ class ClearOutside(WeatherAPI):
                 "wind_speed": pd.to_numeric(wind_speeds, errors="coerce"),
             }
         )
-
-        # Convert wind speed from mph to m/s
-        raw_data["wind_speed"] *= 0.44704
 
         return raw_data
