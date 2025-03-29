@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
+import re
 from urllib.parse import urljoin
 
 import pandas as pd
-import pint_pandas  # TODO: ignore unused import
 import requests
 from bs4 import BeautifulSoup
 from pvlib.location import Location
@@ -37,13 +37,15 @@ class ClearOutside(WeatherAPI):
     def retrieve_new_data(self) -> pd.DataFrame:
         """Retrieve weather data."""
         _LOGGER.debug("Retrieving new weather data from %s", self.url)
-        response = requests.get(
-            self.url, timeout=int(self.timeout.total_seconds())
-        )
+        response = requests.get(self.url, timeout=int(self.timeout.total_seconds()))
         _LOGGER.debug("Response status code: %s", response.status_code)
 
         weather_data_list = []
         soup = BeautifulSoup(response.content, "lxml")
+
+        # get timezone and base date
+        start = self._get_start_time(soup)
+        _LOGGER.debug("Forecast start time: %s", start)
 
         # loop over all forecast days in the HTML
         for day_div in soup.find_all("div", class_="fc_day"):
@@ -65,6 +67,14 @@ class ClearOutside(WeatherAPI):
         # convert to pint datatype
         schema = self.input_schema
         df = df.astype(schema)
+
+        # add timestamp column
+        df["datetime"] = pd.date_range(
+            start=start,
+            periods=len(df),
+            freq="h",  # Use lowercase 'h' for hourly frequency
+        )
+
         return df
 
     @property
@@ -81,13 +91,9 @@ class ClearOutside(WeatherAPI):
 
         def extract_hourly_values(detail_rows, label_text):
             for row in detail_rows:
-                label = row.find("span", class_="fc_detail_label").get_text(
-                    strip=True
-                )
+                label = row.find("span", class_="fc_detail_label").get_text(strip=True)
                 if label == label_text:
-                    return [
-                        li.get_text(strip=True) for li in row.find_all("li")
-                    ]
+                    return [li.get_text(strip=True) for li in row.find_all("li")]
             return []
 
         detail_rows = table.select("div.fc_detail_row")
@@ -101,9 +107,7 @@ class ClearOutside(WeatherAPI):
         wind_speeds = []
         wind_dirs = []
         for row in detail_rows:
-            label = row.find("span", class_="fc_detail_label").get_text(
-                strip=True
-            )
+            label = row.find("span", class_="fc_detail_label").get_text(strip=True)
             if label == "Wind Speed/Direction (mph)":
                 for li in row.find_all("li"):
                     wind_speeds.append(li.get_text(strip=True))
@@ -129,3 +133,39 @@ class ClearOutside(WeatherAPI):
         )
 
         return raw_data
+
+    def _get_start_time(self, soup: BeautifulSoup) -> dt.datetime:
+        """Get start time including timezone from the forecast header."""
+        match = re.search(
+            r'<div class="fc_hours fc_hour_ratings">.*?<li[^>]*?><span[^>]*?>.*?</span>\s*(\d{1,2})\s*<span>',
+            soup.find("div", class_="fc_hours").decode(),
+            re.DOTALL,
+        )
+        # get hour
+        if match:
+            hour = int(match.group(1))
+            time = dt.time(hour=hour, minute=0, second=0)
+        else:
+            raise ValueError("Could not parse forecast hour.")
+
+        # extract timezone and base date from forecast header
+        header = soup.find("h2", string=re.compile("Generated:"))
+        match = re.search(
+            r"Generated:\s*(\d{2}/\d{2}/\d{2}) (\d{2}:\d{2}:\d{2})\. "
+            r"Forecast:\s*(\d{2}/\d{2}/\d{2}) to \d{2}/\d{2}/\d{2}\. "
+            r"Timezone: UTC([+-]\d+\.\d+)",
+            header.text,
+        )
+        _LOGGER.debug("Forecast header: %s", header.text)
+
+        if match:
+            # print all groups
+            date = dt.datetime.strptime(match.group(1), "%y/%m/%d").date()
+            tz = match.group(4)
+
+            start = dt.datetime.combine(
+                date, time, dt.timezone(dt.timedelta(hours=float(tz)))
+            )
+            start = start.replace(minute=0, second=0, microsecond=0)
+            return start
+        raise ValueError("Could not parse forecast date or timezone.")

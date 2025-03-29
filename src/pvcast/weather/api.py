@@ -5,13 +5,14 @@ from __future__ import annotations
 import datetime as dt
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import pandas as pd
 import voluptuous as vol
 from pvlib.location import Location
 
-from .const import WEATHER_SCHEMA
+from .const import DT_FORMAT, WEATHER_SCHEMA
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -61,19 +62,36 @@ class WeatherAPI(ABC):
         for key, value in self.output_schema.items():
             df[key] = df[key].pint.to(value)
 
-        # convert to dictionary and validate schema
+        _LOGGER.debug("Weather data retrieved: \n%s", df.head(5))
+
+        # validate the response
+        self._validate(df.copy())
+
+    def _validate(self, df: pd.DataFrame) -> None:
+        """Validate the response from the API.
+
+        :param df: Response from the API
+        :return: Validated response
+        """
+        # convert to float
+        for key in self.output_schema:
+            df[key] = df[key].astype(float)
+
+        # convert dt to string
+        df["datetime"] = df["datetime"].dt.strftime(DT_FORMAT)
+
         data_list = df.to_dict("records")
+
         try:
             validated_data: dict[str, Any] = {
-                "source": "",
-                "interval": "",
+                "source": "test",
+                "interval": "test",
                 "data": data_list,
             }
             WEATHER_SCHEMA(validated_data)
         except vol.Invalid as exc:
             msg = f"Error validating weather data: {validated_data}"
             raise ValueError(msg) from exc
-        return df
 
 
 class WeatherAPIFactory:
@@ -92,7 +110,7 @@ class WeatherAPIFactory:
         """
         self._apis[api_id] = weather_api_class
 
-    def get_weather_api(self, api_id: str, **kwargs: Any) -> "WeatherAPI":
+    def get_weather_api(self, api_id: str, **kwargs: Any) -> WeatherAPI:
         """Get a weather API instance.
 
         :param api_id: The identifier string of the API used in config.yaml.
@@ -100,14 +118,14 @@ class WeatherAPIFactory:
         :return: The weather API instance.
         """
         try:
-            weather_api_class: Callable[..., "WeatherAPI"] = self._apis[api_id]
+            weather_api_class: Callable[..., WeatherAPI] = self._apis[api_id]
         except KeyError as exc:
             msg = f"Unknown weather API: {api_id}"
             raise ValueError(msg) from exc
 
         return weather_api_class(**kwargs)
 
-    def get_weather_api_list_obj(self) -> list[Callable[..., "WeatherAPI"]]:
+    def get_weather_api_list_obj(self) -> list[Callable[..., WeatherAPI]]:
         """Get a list of all registered weather API instances.
 
         :return: List of weather API classes.
