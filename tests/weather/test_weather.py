@@ -51,10 +51,10 @@ class WeatherProviderTests:
     def test_get_weather(self, weather_api: WeatherAPI) -> None:
         """Test the get_weather function."""
         df = weather_api.get_weather()
-        print(df)
-        # weather = pd.DataFrame.from_dict(data)
-        # assert isinstance(weather, pd.DataFrame)
-        # # assert weather.null_count().sum_horizontal().item() == 0
+        assert isinstance(df, pd.DataFrame)
+        assert df.shape[0] >= 24
+        assert isinstance(weather_api._validate(df), dict)
+        # assert weather.null_count().sum_horizontal().item() == 0
         # assert weather.shape[0] >= 24
 
 

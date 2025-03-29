@@ -8,6 +8,7 @@ import re
 from urllib.parse import urljoin
 
 import pandas as pd
+import pint_pandas  # TODO: ignore unused import
 import requests
 from bs4 import BeautifulSoup
 from pvlib.location import Location
@@ -37,7 +38,9 @@ class ClearOutside(WeatherAPI):
     def retrieve_new_data(self) -> pd.DataFrame:
         """Retrieve weather data."""
         _LOGGER.debug("Retrieving new weather data from %s", self.url)
-        response = requests.get(self.url, timeout=int(self.timeout.total_seconds()))
+        response = requests.get(
+            self.url, timeout=int(self.timeout.total_seconds())
+        )
         _LOGGER.debug("Response status code: %s", response.status_code)
 
         weather_data_list = []
@@ -91,9 +94,13 @@ class ClearOutside(WeatherAPI):
 
         def extract_hourly_values(detail_rows, label_text):
             for row in detail_rows:
-                label = row.find("span", class_="fc_detail_label").get_text(strip=True)
+                label = row.find("span", class_="fc_detail_label").get_text(
+                    strip=True
+                )
                 if label == label_text:
-                    return [li.get_text(strip=True) for li in row.find_all("li")]
+                    return [
+                        li.get_text(strip=True) for li in row.find_all("li")
+                    ]
             return []
 
         detail_rows = table.select("div.fc_detail_row")
@@ -107,7 +114,9 @@ class ClearOutside(WeatherAPI):
         wind_speeds = []
         wind_dirs = []
         for row in detail_rows:
-            label = row.find("span", class_="fc_detail_label").get_text(strip=True)
+            label = row.find("span", class_="fc_detail_label").get_text(
+                strip=True
+            )
             if label == "Wind Speed/Direction (mph)":
                 for li in row.find_all("li"):
                     wind_speeds.append(li.get_text(strip=True))

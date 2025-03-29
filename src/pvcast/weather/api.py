@@ -62,12 +62,13 @@ class WeatherAPI(ABC):
         for key, value in self.output_schema.items():
             df[key] = df[key].pint.to(value)
 
-        _LOGGER.debug("Weather data retrieved: \n%s", df.head(5))
+        _LOGGER.debug("Weather data retrieved: \n%s", df.head(24))
 
         # validate the response
         self._validate(df.copy())
+        return df
 
-    def _validate(self, df: pd.DataFrame) -> None:
+    def _validate(self, df: pd.DataFrame) -> dict[str, Any]:
         """Validate the response from the API.
 
         :param df: Response from the API
@@ -82,16 +83,19 @@ class WeatherAPI(ABC):
 
         data_list = df.to_dict("records")
 
+        validated_data: dict[str, Any] = {
+            "source": "test",
+            "interval": "test",
+            "data": data_list,
+        }
+
         try:
-            validated_data: dict[str, Any] = {
-                "source": "test",
-                "interval": "test",
-                "data": data_list,
-            }
             WEATHER_SCHEMA(validated_data)
         except vol.Invalid as exc:
             msg = f"Error validating weather data: {validated_data}"
             raise ValueError(msg) from exc
+
+        return validated_data
 
 
 class WeatherAPIFactory:
