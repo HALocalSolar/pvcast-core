@@ -30,13 +30,13 @@ class ConfigReader:
             msg = f"Configuration file {self.config_file_path} not found."
             raise FileNotFoundError(msg)
 
-        # load the main configuration file
         with self.config_file_path.open(encoding="utf-8") as config_file:
             try:
+                # load the main configuration file
                 config = yaml.safe_load(config_file)
 
                 # validate the configuration
-                Schema(self._config_schema)(config)
+                config = Schema(self._config_schema)(config)
             except yaml.YAMLError as exc:
                 msg = (
                     f"Error parsing config.yaml file with message: {exc}.\n"
@@ -51,12 +51,11 @@ class ConfigReader:
                 config["general"]["location"]["timezone"]
             )
         except UnknownTimeZoneError as exc:
-            msg = (
-                f"Unknown timezone {config['general']['location']['timezone']}"
-            )
+            msg = f"Unknown timezone {config['general']['location']['timezone']}"
             raise UnknownTimeZoneError(msg) from exc
 
         self._config = config
+        _LOGGER.debug("Configuration loaded successfully: \n%s", self._config)
 
     @property
     def config(self) -> dict[str, Any]:
@@ -81,9 +80,7 @@ class ConfigReader:
                 Required("name"): str,
             }
         )
-        clearoutside = Schema(
-            {Required("type"): "clearoutside", Required("name"): str}
-        )
+        clearoutside = Schema({Required("type"): "clearoutside", Required("name"): str})
         return Schema(
             {
                 Required("general"): {

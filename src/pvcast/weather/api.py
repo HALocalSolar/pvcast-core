@@ -12,7 +12,7 @@ import pandas as pd
 import voluptuous as vol
 from pvlib.location import Location
 
-from .const import DT_FORMAT, WEATHER_SCHEMA
+from .const import WEATHER_SCHEMA
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -65,10 +65,10 @@ class WeatherAPI(ABC):
         _LOGGER.debug("Weather data retrieved: \n%s", df.head(24))
 
         # validate the response
-        self._validate(df.copy())
-        return df
+        validated_data: dict = self._validate(df.copy())
+        return pd.DataFrame.from_records(validated_data)
 
-    def _validate(self, df: pd.DataFrame) -> dict[str, Any]:
+    def _validate(self, df: pd.DataFrame) -> list:
         """Validate the response from the API.
 
         :param df: Response from the API
@@ -78,21 +78,11 @@ class WeatherAPI(ABC):
         for key in self.output_schema:
             df[key] = df[key].astype(float)
 
-        # convert dt to string
-        df["datetime"] = df["datetime"].dt.strftime(DT_FORMAT)
-
         data_list = df.to_dict("records")
-
-        validated_data: dict[str, Any] = {
-            "source": "test",
-            "interval": "test",
-            "data": data_list,
-        }
-
         try:
-            WEATHER_SCHEMA(validated_data)
+            validated_data = WEATHER_SCHEMA(data_list)
         except vol.Invalid as exc:
-            msg = f"Error validating weather data: {validated_data}"
+            msg = f"Error validating weather data: {data_list}with message: {exc}"
             raise ValueError(msg) from exc
 
         return validated_data

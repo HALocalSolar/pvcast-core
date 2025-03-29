@@ -7,7 +7,6 @@ import datetime as dt
 import pandas as pd
 import pytest
 from pvlib.location import Location
-
 from src.pvcast.weather.api import WeatherAPI, WeatherAPIFactory
 
 from ..conftest import MockWeatherAPI
@@ -43,8 +42,7 @@ class WeatherProviderTests:
             for key in ["cloud_cover", "temperature", "humidity", "wind_speed"]
         )
         assert all(
-            isinstance(value, str)
-            for value in weather_api.input_schema.values()
+            isinstance(value, str) for value in weather_api.input_schema.values()
         )
         _ = weather_api.get_weather()
 
@@ -53,9 +51,19 @@ class WeatherProviderTests:
         df = weather_api.get_weather()
         assert isinstance(df, pd.DataFrame)
         assert df.shape[0] >= 24
-        assert isinstance(weather_api._validate(df), dict)
-        # assert weather.null_count().sum_horizontal().item() == 0
-        # assert weather.shape[0] >= 24
+        assert isinstance(weather_api._validate(df.copy()), list)
+
+    def test_get_weather_gaps(self, weather_api: WeatherAPI) -> None:
+        """Test the get_weather function with gaps in the data."""
+        df = weather_api.get_weather()
+        assert isinstance(weather_api._validate(df.copy()), list)
+        # delete rows in the middle of the dataframe
+        df = df.drop(df.index[5:10])
+        with pytest.raises(
+            ValueError,
+            match="Gaps in data detected. Data must be evenly spaced.",
+        ):
+            weather_api._validate(df.copy())
 
 
 class TestWeatherFactory:
