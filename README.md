@@ -35,24 +35,30 @@ classDiagram
     }
 
 
-    class OpenMeteo{
+    class WebServer{
     }
 
-    class HAEntity{
+    class WeatherAPI{
+        <<Abstract>>
+        +get_weather()
     }
 
-    class Webserver{
+    class PlantModel{
+    }
+    
+    class SystemManager{
+        <<Interface>>
     }
 
-    class WeatherSource{
-    }
+    %% connections
+    SystemManager "1" o-- "1" ConfigReader 
+    SystemManager "1" o-- "1..n" PlantModel 
+    SystemManager "1" o-- "1..n" WeatherAPI
+    WebServer "1" <-- "1" SystemManager 
 
-    class PVPlantModel{
-    }
-
-    WeatherSource <|-- HAEntity 
-    WeatherSource <|-- OpenMeteo 
-    Webserver <-- PVPlantModel 
-    PVPlantModel <-- ConfigReader 
-    Webserver <-- WeatherSource 
+    %% WeatherSource <|-- HAEntity 
+    %% WeatherSource <|-- OpenMeteo 
+    %% Webserver <-- PVPlantModel 
+    %% PVPlantModel <-- ConfigReader 
+    %% Webserver <-- WeatherSource 
 ```
