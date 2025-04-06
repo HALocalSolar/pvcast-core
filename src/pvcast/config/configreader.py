@@ -55,7 +55,6 @@ class ConfigReader:
             raise UnknownTimeZoneError(msg) from exc
 
         self._config = config
-        _LOGGER.debug("Configuration loaded successfully: \n%s", self._config)
 
     @property
     def config(self) -> dict[str, Any]:

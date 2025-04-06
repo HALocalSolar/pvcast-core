@@ -8,7 +8,7 @@ import re
 from urllib.parse import urljoin
 
 import pandas as pd
-import pint_pandas  # TODO: ignore unused import
+import pint_pandas
 import requests
 from bs4 import BeautifulSoup
 from pvlib.location import Location
@@ -38,9 +38,7 @@ class ClearOutside(WeatherAPI):
     def retrieve_new_data(self) -> pd.DataFrame:
         """Retrieve weather data."""
         _LOGGER.debug("Retrieving new weather data from %s", self.url)
-        response = requests.get(
-            self.url, timeout=int(self.timeout.total_seconds())
-        )
+        response = requests.get(self.url, timeout=int(self.timeout.total_seconds()))
         _LOGGER.debug("Response status code: %s", response.status_code)
 
         weather_data_list = []
@@ -52,24 +50,12 @@ class ClearOutside(WeatherAPI):
 
         # loop over all forecast days in the HTML
         for day_div in soup.find_all("div", class_="fc_day"):
-            daily_df = self._find_elements(day_div)
-
-            if daily_df.empty:
-                continue
-
-            weather_data_list.append(daily_df)
-
-        if not weather_data_list:
-            return pd.DataFrame()
+            weather_data_list.append(self._find_elements(day_div))
 
         df = pd.concat(weather_data_list, ignore_index=True)
 
-        # interpolate and drop any remaining NaNs
-        df = df.interpolate().dropna()
-
         # convert to pint datatype
-        schema = self.input_schema
-        df = df.astype(schema)
+        df = df.astype(self.input_schema)
 
         # add timestamp column
         df["datetime"] = pd.date_range(
@@ -89,34 +75,27 @@ class ClearOutside(WeatherAPI):
             "wind_speed": "pint[mph]",
         }
 
+    def _extract_hourly_values(self, detail_rows, label_text):
+        for row in detail_rows:
+            label = row.find("span", class_="fc_detail_label").get_text(strip=True)
+            if label == label_text:
+                return [li.get_text(strip=True) for li in row.find_all("li")]
+        raise ValueError(f"Could not find label '{label_text}' in detail rows.")
+
     def _find_elements(self, table: BeautifulSoup) -> pd.DataFrame:
         """Find weather data elements in the table for one day (24 hours)."""
-
-        def extract_hourly_values(detail_rows, label_text):
-            for row in detail_rows:
-                label = row.find("span", class_="fc_detail_label").get_text(
-                    strip=True
-                )
-                if label == label_text:
-                    return [
-                        li.get_text(strip=True) for li in row.find_all("li")
-                    ]
-            return []
-
         detail_rows = table.select("div.fc_detail_row")
 
-        total_clouds = extract_hourly_values(
+        total_clouds = self._extract_hourly_values(
             detail_rows, "Total Clouds (% Sky Obscured)"
         )
-        temp = extract_hourly_values(detail_rows, "Temperature (°C)")
-        rh = extract_hourly_values(detail_rows, "Relative Humidity (%)")
+        temp = self._extract_hourly_values(detail_rows, "Temperature (°C)")
+        rh = self._extract_hourly_values(detail_rows, "Relative Humidity (%)")
 
         wind_speeds = []
         wind_dirs = []
         for row in detail_rows:
-            label = row.find("span", class_="fc_detail_label").get_text(
-                strip=True
-            )
+            label = row.find("span", class_="fc_detail_label").get_text(strip=True)
             if label == "Wind Speed/Direction (mph)":
                 for li in row.find_all("li"):
                     wind_speeds.append(li.get_text(strip=True))
@@ -128,9 +107,6 @@ class ClearOutside(WeatherAPI):
                     )
                     wind_dirs.append(direction)
                 break
-
-        if not total_clouds or not temp or not rh or not wind_speeds:
-            return pd.DataFrame()  # Return empty if any key data is missing
 
         raw_data = pd.DataFrame(
             {

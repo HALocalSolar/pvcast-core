@@ -7,12 +7,12 @@ See https://stackoverflow.com/questions/34466027/in-pytest-what-is-the-use-of-co
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 import pandas as pd
 import pytest
 from pvlib.location import Location
-
 from src.pvcast.weather.api import WeatherAPI
 
 LOCATIONS = [
@@ -47,3 +47,8 @@ class MockWeatherAPI(WeatherAPI):
 def location(request: pytest.FixtureRequest) -> Location:
     """Fixture that creates a location."""
     return Location(*request.param)
+
+
+def pytest_sessionstart(session: pytest.Session) -> None:
+    """Set up env variable."""
+    os.environ["PVCAST_CONFIG"] = "tests/configs/test_config_string.yaml"

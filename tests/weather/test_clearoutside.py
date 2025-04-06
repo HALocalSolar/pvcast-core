@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator
 from urllib.parse import urljoin
 
 import pytest
 import responses
 from pvlib.location import Location
-
 from src.pvcast.weather import API_FACTORY
 from src.pvcast.weather.api import WeatherAPI
 
@@ -30,7 +29,7 @@ class TestClearOutsideWeather(WeatherProviderTests):
     @pytest.fixture
     def clearoutside_api(
         self, location: Location, clearoutside_html_page: str
-    ) -> Generator[WeatherAPI, None, None]:
+    ) -> Generator[WeatherAPI]:
         """Set up the Clear Outside API."""
         lat = str(round(location.latitude, 2))
         lon = str(round(location.longitude, 2))
@@ -42,9 +41,7 @@ class TestClearOutsideWeather(WeatherProviderTests):
                 body=clearoutside_html_page,
                 status=200,
             )
-            api = API_FACTORY.get_weather_api(
-                "clearoutside", location=location
-            )
+            api = API_FACTORY.get_weather_api("clearoutside", location=location)
             yield api
 
     @pytest.fixture
