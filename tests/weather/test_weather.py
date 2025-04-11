@@ -6,8 +6,9 @@ import datetime as dt
 
 import pandas as pd
 import pytest
+import voluptuous as vol
 from pvlib.location import Location
-from src.pvcast.weather.api import WeatherAPI, WeatherAPIFactory
+from src.pvcast.weather.api import API_FACTORY, WeatherAPI, WeatherAPIFactory
 
 from ..conftest import MockWeatherAPI
 
@@ -72,45 +73,44 @@ class TestWeatherFactory:
     test_url = "http://fakeurl.com/status/"
 
     @pytest.fixture
-    def weather_api_factory(self) -> WeatherAPIFactory:
-        """Get a weather API factory."""
-        api_factory_test = WeatherAPIFactory()
-        api_factory_test.register("mock", MockWeatherAPI)
-        return api_factory_test
-
-    def test_get_weather_api(
-        self,
-        weather_api_factory: WeatherAPIFactory,
-    ) -> None:
-        """Test the get_weather_api function."""
-        assert isinstance(weather_api_factory, WeatherAPIFactory)
-        assert isinstance(
-            weather_api_factory.get_weather_api(
-                "mock",
-                location=Location(0, 0, "UTC", 0),
-            ),
-            MockWeatherAPI,
+    def mock_weather_api(self) -> MockWeatherAPI:
+        """Get a weather API"""
+        return MockWeatherAPI(
+            location=Location(0, 0, "UTC", 0),
+            timeout=dt.timedelta(seconds=10),
         )
-        with pytest.raises(ValueError, match="Unknown weather API"):
-            weather_api_factory.get_weather_api(
-                "wrong_api", location=Location(0, 0, "UTC", 0)
-            )
 
-    def test_get_weather_api_list_obj(
-        self, weather_api_factory: WeatherAPIFactory
-    ) -> None:
+    def test_get_weather_api(self) -> None:
+        """Test the get_weather_api function."""
+        assert isinstance(API_FACTORY, WeatherAPIFactory)
+        api = API_FACTORY.get_weather_api(
+            "mockweatherapi",
+            location=Location(0, 0, "UTC", 0),
+        )
+        assert isinstance(api, MockWeatherAPI)
+        with pytest.raises(ValueError, match="Unknown weather API"):
+            API_FACTORY.get_weather_api("wrong_api", location=Location(0, 0, "UTC", 0))
+
+    def test_get_weather_api_schema(self) -> None:
+        """Test the get_weather_api function with a schema."""
+        assert isinstance(API_FACTORY, WeatherAPIFactory)
+        api_schema = API_FACTORY.get_weather_api_schema("mockweatherapi")
+        assert isinstance(api_schema, vol.Schema)
+
+    def test_get_weather_api_list_obj(self) -> None:
         """Test the get_weather_api function with a list of objects."""
-        assert isinstance(weather_api_factory, WeatherAPIFactory)
-        api_list = weather_api_factory.get_weather_api_list_obj()
+        assert isinstance(API_FACTORY, WeatherAPIFactory)
+        api_list = API_FACTORY.get_weather_api_list_obj()
         assert isinstance(api_list, list)
-        assert len(api_list) == 1
+        assert len(api_list) >= 1
 
     def test_get_weather_api_list_str(
-        self, weather_api_factory: WeatherAPIFactory
+        self,
+        # weather_api_factory: WeatherAPIFactory
     ) -> None:
         """Test the get_weather_api function with a list of strings."""
-        assert isinstance(weather_api_factory, WeatherAPIFactory)
-        api_list = weather_api_factory.get_weather_api_list_str()
+        assert isinstance(API_FACTORY, WeatherAPIFactory)
+        api_list = API_FACTORY.get_weather_api_list_str()
         assert isinstance(api_list, list)
-        assert len(api_list) == 1
-        assert api_list[0] == "mock"
+        assert len(api_list) >= 1
+        assert "mockweatherapi" in api_list

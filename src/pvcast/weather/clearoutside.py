@@ -10,12 +10,14 @@ from urllib.parse import urljoin
 import pandas as pd
 import pint_pandas
 import requests
+import voluptuous as vol
 from bs4 import BeautifulSoup
 from pvlib.location import Location
 
-from src.pvcast.weather.api import WeatherAPI
+from src.pvcast.weather.api import API_FACTORY, WeatherAPI
 
 _LOGGER = logging.getLogger(__name__)
+SCHEMA = vol.Schema({vol.Required("type"): "clearoutside", vol.Required("name"): str})
 
 
 class ClearOutside(WeatherAPI):
@@ -154,3 +156,11 @@ class ClearOutside(WeatherAPI):
             start = start.replace(minute=0, second=0, microsecond=0)
             return start
         raise ValueError("Could not parse forecast date or timezone.")
+
+
+# Register the API with the factory
+API_FACTORY.register(
+    "clearoutside",
+    ClearOutside,
+    SCHEMA,
+)

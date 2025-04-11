@@ -9,7 +9,11 @@ from typing import TYPE_CHECKING
 import pytz
 import yaml
 from pytz import UnknownTimeZoneError
-from voluptuous import Any, Coerce, Required, Schema, Url
+from voluptuous import Any, Coerce, Required, Schema
+
+from src.pvcast.weather.api import API_FACTORY
+
+from .const import PLANT_SCHEMAS
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -36,6 +40,7 @@ class ConfigReader:
                 config = yaml.safe_load(config_file)
 
                 # validate the configuration
+                print(self._config_schema)
                 config = Schema(self._config_schema)(config)
             except yaml.YAMLError as exc:
                 msg = (
@@ -70,21 +75,19 @@ class ConfigReader:
 
         :return: Config schema.
         """
-        homessistant = Schema(
-            {
-                Required("type"): "homeassistant",
-                Required("entity_id"): str,
-                Required("url"): Url,
-                Required("token"): str,
-                Required("name"): str,
-            }
-        )
-        clearoutside = Schema({Required("type"): "clearoutside", Required("name"): str})
+        weather_api_schemas = API_FACTORY.get_schema_list()
+        plant_schemas = PLANT_SCHEMAS
+
+        # create the schema for the configuration file
         return Schema(
             {
                 Required("general"): {
                     Required("weather"): {
-                        Required("sources"): [Any(homessistant, clearoutside)],
+                        Required("sources"): [
+                            Any(
+                                *weather_api_schemas,
+                            ),
+                        ],
                     },
                     Required("location"): {
                         Required("latitude"): float,
@@ -93,22 +96,6 @@ class ConfigReader:
                         Required("timezone"): str,
                     },
                 },
-                Required("plant"): [
-                    {
-                        Required("name"): str,
-                        Required("inverter"): str,
-                        Required("microinverter"): Coerce(bool),
-                        Required("arrays"): [
-                            {
-                                Required("name"): str,
-                                Required("tilt"): Coerce(float),
-                                Required("azimuth"): Coerce(float),
-                                Required("modules_per_string"): int,
-                                Required("strings"): int,
-                                Required("module"): str,
-                            }
-                        ],
-                    }
-                ],
+                Required("plant"): [Any(*plant_schemas)],
             }
         )

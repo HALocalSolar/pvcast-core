@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 
 import pytest
+from pvlib.location import Location
 from src.pvcast.model.manager import SystemManager, system
 
 
@@ -12,16 +13,19 @@ class TestSystemManager:
     """Test the weather factory module."""
 
     @pytest.fixture
-    def system_manager(self) -> SystemManager:
+    def sys(self) -> SystemManager:
         """Create a SystemManager instance."""
         # set the environment variable for testing
         return SystemManager()
 
-    def test_init(self, system_manager: SystemManager) -> None:
+    def test_init(self, sys: SystemManager) -> None:
         """Test the SystemManager initialization."""
-        assert system_manager is not None
-        assert system_manager.config is not None
-        assert isinstance(system_manager.config, dict)
+        assert sys is not None
+        assert isinstance(sys.location, Location)
+        assert sys.location.latitude == 52.35845515630293
+        assert sys.location.longitude == 4.88115070391368
+        assert sys.location.altitude == 0.0
+        assert sys.location.tz == "UTC"
 
     def test_init_env_var_not_set(self) -> None:
         """Test initialization when PVCAST_CONFIG environment var not set."""

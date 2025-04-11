@@ -9,8 +9,8 @@ from urllib.parse import urljoin
 import pytest
 import responses
 from pvlib.location import Location
-from src.pvcast.weather import API_FACTORY
-from src.pvcast.weather.api import WeatherAPI
+from src.pvcast.weather.api import API_FACTORY, WeatherAPI
+from src.pvcast.weather.clearoutside import ClearOutside
 
 from .test_weather import WeatherProviderTests
 
@@ -42,6 +42,7 @@ class TestClearOutsideWeather(WeatherProviderTests):
                 status=200,
             )
             api = API_FACTORY.get_weather_api("clearoutside", location=location)
+            assert isinstance(api, ClearOutside)
             yield api
 
     @pytest.fixture

@@ -10,23 +10,32 @@ from pytz import UnknownTimeZoneError
 from src.pvcast.config.configreader import ConfigReader
 from voluptuous import MultipleInvalid
 
-from tests.const import TEST_CONF_ERR, TEST_CONF_STRING_PATH
+from tests.const import (
+    TEST_CONF_ERR,
+    TEST_CONF_MICRO_PATH,
+    TEST_CONF_STRING_PATH,
+)
 
 
 class TestConfigReader:
     """Test the configreader module."""
 
     @pytest.fixture
-    def configreader(self) -> ConfigReader:
+    def config_string(self) -> ConfigReader:
         """Fixture for the configreader initialized without a secrets file and
         no !secret tags in config.
         """
         return ConfigReader(TEST_CONF_STRING_PATH)
 
-    def test_configreader_no_secrets(self, configreader: ConfigReader) -> None:
+    @pytest.fixture
+    def config_micro(self) -> ConfigReader:
+        """Fixture for the configreader initialized with a microinverter."""
+        return ConfigReader(TEST_CONF_MICRO_PATH)
+
+    def test_configreader_no_secrets(self, config_string: ConfigReader) -> None:
         """Test the configreader without a secrets file and no !secret tags in config."""
-        assert isinstance(configreader, ConfigReader)
-        config = configreader.config
+        assert isinstance(config_string, ConfigReader)
+        config = config_string.config
         assert config["plant"][0]["name"] == "EastWest"
         assert config["plant"][1]["name"] == "NorthSouth"
 
@@ -39,6 +48,11 @@ class TestConfigReader:
         """Test the configreader with a wrong config file."""
         with pytest.raises(FileNotFoundError):
             ConfigReader(Path("wrongfile.yaml"))
+
+    def test_configreader_micro(self, config_micro: ConfigReader) -> None:
+        """Test the configreader with a microinverter."""
+        assert isinstance(config_micro, ConfigReader)
+        config = config_micro.config
 
     def test_invalid_timezone(self) -> None:
         """Test the configreader with an invalid timezone."""
@@ -61,8 +75,8 @@ class TestConfigReader:
         with pytest.raises(MultipleInvalid):
             ConfigReader(config_file_path=bad_schema)
 
-    def test_correct_coercion_of_types(self, configreader: ConfigReader) -> None:
+    def test_correct_coercion_of_types(self, config_string: ConfigReader) -> None:
         """Test that coercion of float/bool types works as expected."""
-        plant = configreader.config["plant"][0]
+        plant = config_string.config["plant"][0]
         assert isinstance(plant["microinverter"], bool)
         assert isinstance(plant["arrays"][0]["tilt"], float)

@@ -12,8 +12,9 @@ from typing import Any
 
 import pandas as pd
 import pytest
+import voluptuous as vol
 from pvlib.location import Location
-from src.pvcast.weather.api import WeatherAPI
+from src.pvcast.weather.api import API_FACTORY, WeatherAPI
 
 LOCATIONS = [
     (52.3585, 4.8810, "Europe/Amsterdam", 0.0),
@@ -41,6 +42,11 @@ class MockWeatherAPI(WeatherAPI):
             "humidity": "pint[dimensionless]",
             "wind_speed": "pint[m/s]",
         }
+
+
+SCHEMA = vol.Schema({vol.Required("type"): "mockweatherapi", vol.Required("name"): str})
+
+API_FACTORY.register("mockweatherapi", MockWeatherAPI, SCHEMA)
 
 
 @pytest.fixture(params=LOCATIONS)

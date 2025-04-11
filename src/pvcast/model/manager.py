@@ -6,6 +6,8 @@ import logging
 import os
 from pathlib import Path
 
+from pvlib.location import Location
+
 from src.pvcast.config.configreader import ConfigReader
 
 _LOGGER = logging.getLogger(__name__)
@@ -29,13 +31,25 @@ class SystemManager:
             raise FileNotFoundError(f"Config file {config_path} not found.")
         if not os.path.isfile(config_path):
             raise IsADirectoryError(f"Config file {config_path} is a directory.")
-        self._config = ConfigReader(Path(config_path))
-        _LOGGER.debug("System initialized with config: \n%s", self.config)
+
+        # read the configuration file
+        config_file = ConfigReader(Path(config_path))
+        _LOGGER.debug("System initialized with config: \n%s", config_file)
+
+        # get the location from the config
+        loc = config_file.config["general"]["location"]
+        self._loc = Location(
+            latitude=loc["latitude"],
+            longitude=loc["longitude"],
+            tz="UTC",
+            altitude=loc["altitude"],
+            name=f"PV system {loc['latitude']}, {loc['longitude']}",
+        )
 
     @property
-    def config(self) -> dict:
-        """Return the configuration dictionary."""
-        return self._config.config
+    def location(self) -> Location:
+        """Return the location object."""
+        return self._loc
 
 
 # Global instance of the SystemManager

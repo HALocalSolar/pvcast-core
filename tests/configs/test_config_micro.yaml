@@ -1,5 +1,5 @@
 # configuration file for pvcast
-# solar-edge inverter configuration
+# micro inverter configuration
 
 ---
 general:
@@ -11,38 +11,38 @@ general:
     latitude: 52.35845515630293
     longitude: 4.88115070391368
     altitude: 0
-    timezone: Wrong/Timezone
+    timezone: Europe/Amsterdam
 
 plant:
   - name: EastWest
-    inverter: SolarEdge_Technologies_Ltd___SE4000__240V_
-    microinverter: false
     arrays:
       - name: East
         tilt: 30
         azimuth: 90
-        modules_per_string: 4
-        strings: 1
+        modules_per_inverter: 8
+        nr_inverters: 1
         module: Trina_Solar_TSM_330DD14A_II_
+        inverter: Enphase_Energy_Inc___IQ7X_96_x_ACM_US__240V_
       - name: West
-        tilt: 30
+        tilt: 10
         azimuth: 270
-        modules_per_string: 8
-        strings: 1
+        modules_per_inverter: 8
+        nr_inverters: 1
         module: Trina_Solar_TSM_330DD14A_II_
+        inverter: Enphase_Energy_Inc___IQ7X_96_x_ACM_US__240V_
   - name: NorthSouth
-    inverter: SolarEdge_Technologies_Ltd___SE4000__240V_
-    microinverter: false
     arrays:
       - name: North
-        tilt: 30
+        tilt: 25
         azimuth: 0
-        modules_per_string: 4
-        strings: 1
+        modules_per_inverter: 8
+        nr_inverters: 1
         module: Trina_Solar_TSM_330DD14A_II_
-      - name: South
-        tilt: 30
+        inverter: Enphase_Energy_Inc___IQ7X_96_x_ACM_US__240V_
+      - name: West
+        tilt: 20
         azimuth: 180
-        modules_per_string: 8
-        strings: 1
+        modules_per_inverter: 8
+        nr_inverters: 1
         module: Trina_Solar_TSM_330DD14A_II_
+        inverter: Enphase_Energy_Inc___IQ7X_96_x_ACM_US__240V_
