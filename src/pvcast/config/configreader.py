@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 import pytz
 import voluptuous as vol
@@ -15,10 +15,16 @@ from src.pvcast.weather.api import API_FACTORY
 
 from .const import PLANT_SCHEMAS
 
-if TYPE_CHECKING:
-    from pathlib import Path
-
 _LOGGER = logging.getLogger(__name__)
+
+
+def valid_timezone(value: str) -> str:
+    """Validate that the input is a valid timezone string."""
+    try:
+        pytz.timezone(value)
+        return value
+    except UnknownTimeZoneError as exc:
+        raise vol.Invalid(f"Unknown timezone: {value}") from exc
 
 
 @dataclass
@@ -26,42 +32,38 @@ class ConfigReader:
     """Reads PV plant configuration from a YAML file."""
 
     _config: dict[str, vol.Any] = field(init=False, repr=False)
-    config_file_path: Path = field(repr=True)
+    config_file: Path | dict = field(init=True, repr=True)
 
     def __post_init__(self) -> None:
         """Initialize the class."""
-        if not self.config_file_path.exists():
-            msg = f"Configuration file {self.config_file_path} not found."
-            raise FileNotFoundError(msg)
+        if isinstance(self.config_file, Path):
+            if not self.config_file.exists():
+                msg = f"Configuration file {self.config_file} not found."
+                raise FileNotFoundError(msg)
 
-        with self.config_file_path.open(encoding="utf-8") as config_file:
-            try:
-                # load the main configuration file
-                config = yaml.safe_load(config_file)
-
-                # validate the configuration
-                print(self._config_schema)
-                config = vol.Schema(self._config_schema)(config)
-            except yaml.YAMLError as exc:
-                msg = (
-                    f"Error parsing config.yaml file with message: {exc}.\n"
-                    "Please check the file for syntax errors."
-                )
-                _LOGGER.exception(msg)
-                raise yaml.YAMLError(msg) from exc
-
-        # check if the timezone is valid
-        try:
-            config["general"]["location"]["timezone"] = pytz.timezone(
-                config["general"]["location"]["timezone"]
-            )
-        except UnknownTimeZoneError as exc:
+            with self.config_file.open(encoding="utf-8") as config_file:
+                try:
+                    # load the main configuration file and validate
+                    config = yaml.safe_load(config_file)
+                except yaml.YAMLError as exc:
+                    msg = (
+                        f"Error parsing config.yaml with message: {exc}.\n"
+                        "Please check the file for syntax errors."
+                    )
+                    _LOGGER.exception(msg)
+                    raise yaml.YAMLError(msg) from exc
+        elif isinstance(self.config_file, dict):
+            # if config is a dict, we assume it is already parsed
+            config = self.config_file
+        else:
             msg = (
-                f"Unknown timezone {config['general']['location']['timezone']}"
+                f"Configuration file {self.config_file} is not a valid path "
+                "or dictionary."
             )
-            raise UnknownTimeZoneError(msg) from exc
+            raise TypeError(msg)
 
-        self._config = config
+        # validate the configuration file
+        self._config = self._config_schema(config)
 
     @property
     def config(self) -> dict[str, vol.Any]:
@@ -86,16 +88,14 @@ class ConfigReader:
                 vol.Required("general"): {
                     vol.Required("weather"): {
                         vol.Required("sources"): [
-                            vol.Any(
-                                *weather_api_schemas,
-                            ),
+                            vol.Any(*weather_api_schemas),
                         ],
                     },
                     vol.Required("location"): {
                         vol.Required("latitude"): float,
                         vol.Required("longitude"): float,
                         vol.Required("altitude"): vol.Coerce(float),
-                        vol.Required("timezone"): str,
+                        vol.Required("timezone"): valid_timezone,
                     },
                 },
                 vol.Required("plant"): [vol.Any(*plant_schemas)],

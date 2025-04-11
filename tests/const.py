@@ -28,3 +28,63 @@ HASS_WEATHER_ENTITY_ID = "weather.forecast_thuis"
 # this must be one of the keys in the config file due to
 # get_weather_sources in file pvcast/webserver/models/live.py
 MOCK_WEATHER_API = "ClearOutside"
+
+CONFIG_DICT = {
+    "general": {
+        "weather": {"sources": [{"name": "CO", "type": "mockweatherapi"}]},
+        "location": {
+            "latitude": 52.35845515630293,
+            "longitude": 4.88115070391368,
+            "altitude": 0.0,
+            "timezone": "Europe/Amsterdam",
+        },
+    },
+    "plant": [
+        {
+            "name": "EastWest",
+            "inverter": "SolarEdge_Technologies_Ltd___SE4000__240V_",
+            "microinverter": False,
+            "arrays": [
+                {
+                    "name": "East",
+                    "tilt": 30.0,
+                    "azimuth": 90.0,
+                    "modules_per_string": 4,
+                    "strings": 1,
+                    "module": "Trina_Solar_TSM_330DD14A_II_",
+                },
+                {
+                    "name": "West",
+                    "tilt": 30.0,
+                    "azimuth": 270.0,
+                    "modules_per_string": 8,
+                    "strings": 1,
+                    "module": "Trina_Solar_TSM_330DD14A_II_",
+                },
+            ],
+        },
+        {
+            "name": "NorthSouth",
+            "inverter": "SolarEdge_Technologies_Ltd___SE4000__240V_",
+            "microinverter": False,
+            "arrays": [
+                {
+                    "name": "North",
+                    "tilt": 30.0,
+                    "azimuth": 0.0,
+                    "modules_per_string": 4,
+                    "strings": 1,
+                    "module": "Trina_Solar_TSM_330DD14A_II_",
+                },
+                {
+                    "name": "South",
+                    "tilt": 30.0,
+                    "azimuth": 180.0,
+                    "modules_per_string": 8,
+                    "strings": 1,
+                    "module": "Trina_Solar_TSM_330DD14A_II_",
+                },
+            ],
+        },
+    ],
+}

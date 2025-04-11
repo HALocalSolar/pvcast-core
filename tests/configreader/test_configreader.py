@@ -6,17 +6,12 @@ import re
 from pathlib import Path
 
 import pytest
+import voluptuous as vol
 import yaml
-from pytz import UnknownTimeZoneError
-from voluptuous import MultipleInvalid
 
 from src.pvcast.config.configreader import ConfigReader
-from tests.const import (
-    TEST_CONF_ERR,
-    TEST_CONF_MICRO_PATH,
-    TEST_CONF_MISSING,
-    TEST_CONF_STRING_PATH,
-)
+from tests.const import CONFIG_DICT  # TEST_CONF_ERR,; TEST_CONF_MISSING,
+from tests.const import TEST_CONF_MICRO_PATH, TEST_CONF_STRING_PATH
 
 
 class TestConfigReader:
@@ -27,26 +22,40 @@ class TestConfigReader:
         """Parametrized fixture with different test configurations."""
         return ConfigReader(request.param)
 
+    @pytest.fixture
+    def config_dict(self) -> dict:
+        """Fixture for the config dictionary."""
+        return CONFIG_DICT.copy()
+
     def test_configreader_no_config_file(self) -> None:
         """Test the configreader without a config file."""
         with pytest.raises(TypeError):
-            ConfigReader()  # type: ignore[call-arg]
+            ConfigReader()
 
     def test_configreader_wrong_config_file(self) -> None:
         """Test the configreader with a wrong config file."""
         with pytest.raises(FileNotFoundError):
             ConfigReader(Path("wrongfile.yaml"))
 
-    @pytest.mark.parametrize("config", [TEST_CONF_MICRO_PATH], indirect=True)
-    def test_configreader_micro(self, config: ConfigReader) -> None:
+    @pytest.mark.parametrize(
+        "config", [TEST_CONF_MICRO_PATH, TEST_CONF_STRING_PATH], indirect=True
+    )
+    def test_configreader_init(self, config: ConfigReader) -> None:
         """Test the configreader with a microinverter."""
         assert isinstance(config, ConfigReader)
         conf = config.config
+        assert isinstance(conf, dict)
+        conf_validated = config._config_schema(conf)
+        assert isinstance(conf_validated, dict)
+        print(conf_validated)
 
-    def test_invalid_timezone(self) -> None:
+    def test_invalid_timezone(self, config_dict) -> None:
         """Test the configreader with an invalid timezone."""
-        with pytest.raises(UnknownTimeZoneError):
-            _ = ConfigReader(config_file_path=TEST_CONF_ERR)
+        config_dict["general"]["location"]["timezone"] = "invalid_timezone"
+        with pytest.raises(
+            vol.MultipleInvalid, match="invalid_timezone for dictionary value"
+        ):
+            _ = ConfigReader(config_dict)
 
     def test_invalid_yaml_syntax(self, tmp_path: Path) -> None:
         """Test that malformed YAML raises an error."""
@@ -56,15 +65,17 @@ class TestConfigReader:
         )
 
         with pytest.raises(yaml.YAMLError):
-            ConfigReader(config_file_path=malformed_yaml)
+            ConfigReader(malformed_yaml)
 
-    def test_missing_required_fields(self, tmp_path: Path) -> None:
+    def test_missing_required_fields(self, config_dict: dict) -> None:
         """Test missing required fields raise a schema validation error."""
-        bad_schema = tmp_path / "missing.yaml"
-        bad_schema.write_text("general: {}\nplant: []", encoding="utf-8")
+        config_dict.pop("general")
 
-        with pytest.raises(MultipleInvalid):
-            ConfigReader(config_file_path=bad_schema)
+        with pytest.raises(
+            vol.MultipleInvalid,
+            match=re.escape("required key not provided @ data['general']"),
+        ):
+            ConfigReader(config_dict)
 
     @pytest.mark.parametrize("config", [TEST_CONF_STRING_PATH], indirect=True)
     def test_correct_coercion_of_types(self, config: ConfigReader) -> None:
@@ -73,12 +84,13 @@ class TestConfigReader:
         assert isinstance(plant["microinverter"], bool)
         assert isinstance(plant["arrays"][0]["tilt"], float)
 
-    def test_weather_sources_missing(self) -> None:
+    def test_weather_sources_missing(self, config_dict: dict) -> None:
         """Test missing weather sources raise a schema validation error."""
+        config_dict["general"]["weather"].pop("sources")
         with pytest.raises(
-            MultipleInvalid,
+            vol.MultipleInvalid,
             match=re.escape(
-                "expected a list for dictionary value @ data['general']['weather']['sources']"
+                "required key not provided @ data['general']['weather']"
             ),
         ):
-            ConfigReader(config_file_path=TEST_CONF_MISSING)
+            ConfigReader(config_dict)
