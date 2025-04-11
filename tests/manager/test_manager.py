@@ -6,7 +6,8 @@ import os
 
 import pytest
 from pvlib.location import Location
-from src.pvcast.model.manager import SystemManager, system
+
+from src.pvcast.model.manager import SYSTEM, SystemManager
 
 
 class TestSystemManager:
@@ -56,4 +57,4 @@ class TestSystemManager:
 
     def test_manager_global_instance(self) -> None:
         """Test the global instance of SystemManager."""
-        assert system is not None
+        assert SYSTEM is not None

@@ -7,9 +7,9 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 import pytz
+import voluptuous as vol
 import yaml
 from pytz import UnknownTimeZoneError
-from voluptuous import Any, Coerce, Required, Schema
 
 from src.pvcast.weather.api import API_FACTORY
 
@@ -25,7 +25,7 @@ _LOGGER = logging.getLogger(__name__)
 class ConfigReader:
     """Reads PV plant configuration from a YAML file."""
 
-    _config: dict[str, Any] = field(init=False, repr=False)
+    _config: dict[str, vol.Any] = field(init=False, repr=False)
     config_file_path: Path = field(repr=True)
 
     def __post_init__(self) -> None:
@@ -41,7 +41,7 @@ class ConfigReader:
 
                 # validate the configuration
                 print(self._config_schema)
-                config = Schema(self._config_schema)(config)
+                config = vol.Schema(self._config_schema)(config)
             except yaml.YAMLError as exc:
                 msg = (
                     f"Error parsing config.yaml file with message: {exc}.\n"
@@ -56,13 +56,15 @@ class ConfigReader:
                 config["general"]["location"]["timezone"]
             )
         except UnknownTimeZoneError as exc:
-            msg = f"Unknown timezone {config['general']['location']['timezone']}"
+            msg = (
+                f"Unknown timezone {config['general']['location']['timezone']}"
+            )
             raise UnknownTimeZoneError(msg) from exc
 
         self._config = config
 
     @property
-    def config(self) -> dict[str, Any]:
+    def config(self) -> dict[str, vol.Any]:
         """Parse the YAML configuration and return it as a dictionary.
 
         :return: The configuration as a dictionary.
@@ -70,7 +72,7 @@ class ConfigReader:
         return self._config
 
     @property
-    def _config_schema(self) -> Schema:
+    def _config_schema(self) -> vol.Schema:
         """Get the configuration schema as a Schema object.
 
         :return: Config schema.
@@ -79,23 +81,23 @@ class ConfigReader:
         plant_schemas = PLANT_SCHEMAS
 
         # create the schema for the configuration file
-        return Schema(
+        return vol.Schema(
             {
-                Required("general"): {
-                    Required("weather"): {
-                        Required("sources"): [
-                            Any(
+                vol.Required("general"): {
+                    vol.Required("weather"): {
+                        vol.Required("sources"): [
+                            vol.Any(
                                 *weather_api_schemas,
                             ),
                         ],
                     },
-                    Required("location"): {
-                        Required("latitude"): float,
-                        Required("longitude"): float,
-                        Required("altitude"): Coerce(float),
-                        Required("timezone"): str,
+                    vol.Required("location"): {
+                        vol.Required("latitude"): float,
+                        vol.Required("longitude"): float,
+                        vol.Required("altitude"): vol.Coerce(float),
+                        vol.Required("timezone"): str,
                     },
                 },
-                Required("plant"): [Any(*plant_schemas)],
+                vol.Required("plant"): [vol.Any(*plant_schemas)],
             }
         )
