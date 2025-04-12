@@ -10,8 +10,11 @@ import voluptuous as vol
 import yaml
 
 from src.pvcast.config.configreader import ConfigReader
-from tests.const import CONFIG_DICT  # TEST_CONF_ERR,; TEST_CONF_MISSING,
-from tests.const import TEST_CONF_MICRO_PATH, TEST_CONF_STRING_PATH
+from tests.const import (
+    CONFIG_STRING_DICT,
+    TEST_CONF_MICRO_PATH,
+    TEST_CONF_STRING_PATH,
+)
 
 
 class TestConfigReader:
@@ -25,7 +28,7 @@ class TestConfigReader:
     @pytest.fixture
     def config_dict(self) -> dict:
         """Fixture for the config dictionary."""
-        return CONFIG_DICT.copy()
+        return CONFIG_STRING_DICT.copy()
 
     def test_configreader_no_config_file(self) -> None:
         """Test the configreader without a config file."""
@@ -81,7 +84,6 @@ class TestConfigReader:
     def test_correct_coercion_of_types(self, config: ConfigReader) -> None:
         """Test that coercion of float/bool types works as expected."""
         plant = config.config["plant"][0]
-        assert isinstance(plant["microinverter"], bool)
         assert isinstance(plant["arrays"][0]["tilt"], float)
 
     def test_weather_sources_missing(self, config_dict: dict) -> None:

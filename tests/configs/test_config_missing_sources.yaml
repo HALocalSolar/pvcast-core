@@ -14,7 +14,6 @@ general:
 plant:
   - name: EastWest
     inverter: SolarEdge_Technologies_Ltd___SE4000__240V_
-    microinverter: false
     arrays:
       - name: East
         tilt: 30
@@ -30,7 +29,6 @@ plant:
         module: Trina_Solar_TSM_330DD14A_II_
   - name: NorthSouth
     inverter: SolarEdge_Technologies_Ltd___SE4000__240V_
-    microinverter: false
     arrays:
       - name: North
         tilt: 30

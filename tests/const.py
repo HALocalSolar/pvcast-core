@@ -29,7 +29,7 @@ HASS_WEATHER_ENTITY_ID = "weather.forecast_thuis"
 # get_weather_sources in file pvcast/webserver/models/live.py
 MOCK_WEATHER_API = "ClearOutside"
 
-CONFIG_DICT = {
+CONFIG_STRING_DICT = {
     "general": {
         "weather": {"sources": [{"name": "CO", "type": "mockweatherapi"}]},
         "location": {
@@ -43,7 +43,6 @@ CONFIG_DICT = {
         {
             "name": "EastWest",
             "inverter": "SolarEdge_Technologies_Ltd___SE4000__240V_",
-            "microinverter": False,
             "arrays": [
                 {
                     "name": "East",
@@ -66,7 +65,6 @@ CONFIG_DICT = {
         {
             "name": "NorthSouth",
             "inverter": "SolarEdge_Technologies_Ltd___SE4000__240V_",
-            "microinverter": False,
             "arrays": [
                 {
                     "name": "North",

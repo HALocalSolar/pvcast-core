@@ -6,7 +6,6 @@ STRING_SYS = Schema(
     {
         Required("name"): str,
         Required("inverter"): str,
-        Required("microinverter"): Coerce(bool),
         Required("arrays"): [
             {
                 Required("name"): str,
