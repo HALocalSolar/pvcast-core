@@ -53,6 +53,8 @@ class WeatherProviderTests:
         assert isinstance(df, pd.DataFrame)
         assert df.shape[0] >= 24
         assert isinstance(weather_api._validate(df.copy()), list)
+        # save to CSV
+        # df.to_csv("tests/data/weather.csv", index=False)
 
     def test_get_weather_gaps(self, weather_api: WeatherAPI) -> None:
         """Test the get_weather function with gaps in the data."""

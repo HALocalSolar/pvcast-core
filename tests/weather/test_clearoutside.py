@@ -22,7 +22,7 @@ class TestClearOutsideWeather(WeatherProviderTests):
     def clearoutside_html_page(self) -> str:
         """Load the clearoutside html page."""
         with Path.open(
-            Path("tests/data/clearoutside.txt"), encoding="utf-8"
+            Path("tests/data/clearoutside.html"), encoding="utf-8"
         ) as html_file:
             return html_file.read()
 

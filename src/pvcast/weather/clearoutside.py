@@ -146,8 +146,7 @@ class ClearOutside(WeatherAPI):
         _LOGGER.debug("Forecast header: %s", header.text)
 
         if match:
-            # print all groups
-            date = dt.datetime.strptime(match.group(1), "%y/%m/%d").date()
+            date = dt.datetime.strptime(match.group(1), "%d/%m/%y").date()
             tz = match.group(4)
 
             start = dt.datetime.combine(
