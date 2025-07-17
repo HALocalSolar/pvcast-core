@@ -30,8 +30,8 @@ While the class diagram of `pvcast-core` looks like this:
 ```mermaid
 classDiagram
     class ConfigReader{
-        +dict config 
-        -Schema schema 
+        +dict config
+        -Schema schema
     }
 
 
@@ -45,20 +45,20 @@ classDiagram
 
     class PlantModel{
     }
-    
+
     class SystemManager{
         <<Interface>>
     }
 
     %% connections
-    SystemManager "1" o-- "1" ConfigReader 
-    SystemManager "1" o-- "1..n" PlantModel 
+    SystemManager "1" o-- "1" ConfigReader
+    SystemManager "1" o-- "1..n" PlantModel
     SystemManager "1" o-- "1..n" WeatherAPI
-    WebServer "1" <-- "1" SystemManager 
+    WebServer "1" <-- "1" SystemManager
 
-    %% WeatherSource <|-- HAEntity 
-    %% WeatherSource <|-- OpenMeteo 
-    %% Webserver <-- PVPlantModel 
-    %% PVPlantModel <-- ConfigReader 
-    %% Webserver <-- WeatherSource 
+    %% WeatherSource <|-- HAEntity
+    %% WeatherSource <|-- OpenMeteo
+    %% Webserver <-- PVPlantModel
+    %% PVPlantModel <-- ConfigReader
+    %% Webserver <-- WeatherSource
 ```

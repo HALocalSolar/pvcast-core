@@ -8,11 +8,11 @@ on:
   workflow_dispatch:
 
 env:
-  DEFAULT_PYTHON: "3.11"
+  DEFAULT_PYTHON: "3.13"
 
 jobs:
-  mypy:
-    name: mypy
+  ty:
+    name: ty
     runs-on: ubuntu-latest
     steps:
       - name: ⤵️ Check out code from GitHub
@@ -24,5 +24,5 @@ jobs:
           python-version: ${{ env.DEFAULT_PYTHON }}
       - name: 🏗 Install dependencies
         run: uv sync --extra cli --frozen --dev
-      - name: 🚀 Run mypy
-        run: uv run mypy examples src tests
+      - name: 🚀 Run ty
+        run: uv run ty check src tests

@@ -1,6 +1,6 @@
 [project]
 name = "pvcast-core"
-version = "0.0.0"
+version = "0.0.1"
 license = { text = "MIT License" }
 description = "pvcast-core implements the core photovoltaics forecasting functionality"
 authors = [{ name = "Stefan de Lange" }]
@@ -45,37 +45,8 @@ show_missing = true
 fail_under = 50
 omit = []
 
-[tool.mypy]
-# Specify the target platform details in config, so your developers are
-# free to run mypy on Windows, Linux, or macOS and get consistent
-# results.
-platform = "linux"
-python_version = "3.13"
-
-# show error messages from unrelated files
-follow_imports = "normal"
-
-# suppress errors about unsatisfied imports
-ignore_missing_imports = true
-
-# be strict
-check_untyped_defs = true
-disallow_any_generics = true
-disallow_incomplete_defs = true
-disallow_subclassing_any = true
-disallow_untyped_calls = true
-disallow_untyped_decorators = true
-disallow_untyped_defs = true
-no_implicit_optional = true
-no_implicit_reexport = true
-strict_optional = true
-warn_incomplete_stub = true
-warn_no_return = true
-warn_redundant_casts = true
-warn_return_any = true
-warn_unused_configs = true
-warn_unused_ignores = true
-
+[tool.ty.rules]
+possibly-unresolved-reference = "warn"
 
 [tool.pylint.MASTER]
 extension-pkg-whitelist = ["orjson"]
@@ -139,7 +110,6 @@ dev = [
     "covdefaults==2.3.0",
     "coverage[toml]==7.6.12",
     "httpx>=0.28.1",
-    "mypy==1.15.0",
     "pre-commit==4.1.0",
     "pre-commit-hooks==5.0.0",
     "pylint==3.3.4",
@@ -149,5 +119,6 @@ dev = [
     "regex>=2024.11.6",
     "responses>=0.25.7",
     "ruff==0.9.9",
+    "ty>=0.0.1a14",
     "yamllint==1.35.1",
 ]
