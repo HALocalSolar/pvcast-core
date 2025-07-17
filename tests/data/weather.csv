@@ -1,4 +1,4 @@
-cloud_cover,temperature,humidity,wind_speed,datetime
+cloud_cover,temperature,humidity,wind_speed,time
 96.0,16.0,67.0,4.917440000000001,2025-03-23 13:00:00+01:00
 86.0,16.0,61.0,4.917440000000001,2025-03-23 14:00:00+01:00
 83.0,17.0,55.0,4.470400000000001,2025-03-23 15:00:00+01:00
