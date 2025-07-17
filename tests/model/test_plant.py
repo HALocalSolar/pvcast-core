@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import pandas as pd
 import pytest
 import voluptuous as vol
 from pvlib.location import Location
 from pvlib.modelchain import ModelChain
-
 from src.pvcast.model.plant import MicroPlant, StringPlant
+
 from tests.const import CONFIG_MICRO_DICT, CONFIG_STRING_DICT, LOCATIONS, Loc
 
 
@@ -44,9 +45,7 @@ class TestPlant:
         return plant
 
     @pytest.mark.parametrize("location", LOCATIONS, indirect=True)
-    @pytest.mark.parametrize(
-        "string_plant", [CONFIG_STRING_DICT], indirect=True
-    )
+    @pytest.mark.parametrize("string_plant", [CONFIG_STRING_DICT], indirect=True)
     def test_init_string_plant(self, string_plant: StringPlant) -> None:
         """Test the string plant."""
         assert isinstance(string_plant, StringPlant)
@@ -54,9 +53,7 @@ class TestPlant:
         assert isinstance(string_plant._schema, vol.Schema)
         assert isinstance(string_plant._location, Location)
         assert isinstance(string_plant._plants, list)
-        assert all(
-            isinstance(plant, ModelChain) for plant in string_plant._plants
-        )
+        assert all(isinstance(plant, ModelChain) for plant in string_plant._plants)
         assert isinstance(string_plant._temp_param, dict)
         assert len(string_plant._plants) == 1
 
@@ -69,9 +66,7 @@ class TestPlant:
         assert isinstance(micro_plant._schema, vol.Schema)
         assert isinstance(micro_plant._location, Location)
         assert isinstance(micro_plant._plants, list)
-        assert all(
-            isinstance(plant, ModelChain) for plant in micro_plant._plants
-        )
+        assert all(isinstance(plant, ModelChain) for plant in micro_plant._plants)
         assert isinstance(micro_plant._temp_param, dict)
         assert len(micro_plant._plants) == sum(
             array["nr_inverters"] for array in micro_plant._config["arrays"]
@@ -124,3 +119,15 @@ class TestPlant:
                 },
                 Location(0.0, 0.0),
             )
+
+    @pytest.mark.parametrize("location", LOCATIONS, indirect=True)
+    @pytest.mark.parametrize("micro_plant", [CONFIG_MICRO_DICT], indirect=True)
+    def test_run_forecast_micro(
+        self, micro_plant: MicroPlant, weather_df: pd.DataFrame
+    ) -> None:
+        """Test the run method of the micro plant."""
+        assert isinstance(micro_plant, MicroPlant)
+        assert callable(micro_plant.run)
+        assert isinstance(weather_df, pd.DataFrame)
+        # run forecast
+        micro_plant.run(weather_df)

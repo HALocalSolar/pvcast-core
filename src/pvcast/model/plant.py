@@ -6,6 +6,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
+import pandas as pd
 import voluptuous as vol
 from pvlib.location import Location
 from pvlib.modelchain import ModelChain
@@ -56,9 +57,7 @@ class Plant(ABC):
             ) from exc
 
         # set temperature model
-        self._temp_param = TEMPERATURE_MODEL_PARAMETERS["pvsyst"][
-            "freestanding"
-        ]
+        self._temp_param = TEMPERATURE_MODEL_PARAMETERS["pvsyst"]["freestanding"]
 
         # construct plant model from config
         self._collect_params()
@@ -78,9 +77,7 @@ class Plant(ABC):
             for array in self._config["arrays"]:
                 self._modules[array["module"]] = module_params[array["module"]]
         except KeyError as exc:
-            raise vol.Invalid(
-                f"Invalid module in configuration: {exc}"
-            ) from exc
+            raise vol.Invalid(f"Invalid module in configuration: {exc}") from exc
 
         # then, inverters
         try:
@@ -94,15 +91,19 @@ class Plant(ABC):
                         array["inverter"]
                     ]
         except KeyError as exc:
-            raise vol.Invalid(
-                f"Invalid inverter in configuration: {exc}"
-            ) from exc
+            raise vol.Invalid(f"Invalid inverter in configuration: {exc}") from exc
+
+    def run(self, weather_df: pd.DataFrame) -> None:
+        """Run the model chain for each array in the plant.
+
+        :param weather: The weather data to use for the simulation.
+        """
+        # for plant in self._plants:
+        #     plant.run_model(weather)
 
 
 class MicroPlant(Plant):
-    """
-    Micro inverter based PV plant model.
-    """
+    """Micro inverter based PV plant model."""
 
     def __init__(self, config: dict, location: Location) -> None:
         self._config = config
@@ -157,9 +158,7 @@ class MicroPlant(Plant):
 
 
 class StringPlant(Plant):
-    """
-    String inverter based PV plant model.
-    """
+    """String inverter based PV plant model."""
 
     def __init__(self, config: dict, location: Location) -> None:
         self._config = config
@@ -168,8 +167,7 @@ class StringPlant(Plant):
         super().__init__()
 
     def _construct(self) -> None:
-        """
-        Construct the PV plant model.
+        """Construct the PV plant model.
 
         System uses a string inverter, so we create one model chain object.
         """
@@ -197,6 +195,4 @@ class StringPlant(Plant):
             inverter_parameters=self._inverters[inverter],
             name=name,
         )
-        self._plants = [
-            ModelChain(system, self._location, aoi_model="physical")
-        ]
+        self._plants = [ModelChain(system, self._location, aoi_model="physical")]

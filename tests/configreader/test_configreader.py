@@ -8,8 +8,8 @@ from pathlib import Path
 import pytest
 import voluptuous as vol
 import yaml
-
 from src.pvcast.config.configreader import ConfigReader
+
 from tests.const import (
     CONFIG_STRING_DICT,
     TEST_CONF_MICRO_PATH,
@@ -63,9 +63,7 @@ class TestConfigReader:
     def test_invalid_yaml_syntax(self, tmp_path: Path) -> None:
         """Test that malformed YAML raises an error."""
         malformed_yaml = tmp_path / "bad.yaml"
-        malformed_yaml.write_text(
-            "general:\n  location: [unclosed", encoding="utf-8"
-        )
+        malformed_yaml.write_text("general:\n  location: [unclosed", encoding="utf-8")
 
         with pytest.raises(yaml.YAMLError):
             ConfigReader(malformed_yaml)
@@ -91,8 +89,6 @@ class TestConfigReader:
         config_dict["general"]["weather"].pop("sources")
         with pytest.raises(
             vol.MultipleInvalid,
-            match=re.escape(
-                "required key not provided @ data['general']['weather']"
-            ),
+            match=re.escape("required key not provided @ data['general']['weather']"),
         ):
             ConfigReader(config_dict)

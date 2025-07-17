@@ -31,13 +31,9 @@ LOC_AUS = Loc(
 
 LOCATIONS = [LOC_EUW, LOC_USW, LOC_AUS]
 
-TEST_CONF_STRING_PATH = (
-    Path(__file__).parent / "configs" / "test_config_string.yaml"
-)
+TEST_CONF_STRING_PATH = Path(__file__).parent / "configs" / "test_config_string.yaml"
 TEST_CONF_ERR = Path(__file__).parent / "configs" / "test_config_error.yaml"
-TEST_CONF_MICRO_PATH = (
-    Path(__file__).parent / "configs" / "test_config_micro.yaml"
-)
+TEST_CONF_MICRO_PATH = Path(__file__).parent / "configs" / "test_config_micro.yaml"
 TEST_CONF_MISSING = (
     Path(__file__).parent / "configs" / "test_config_missing_sources.yaml"
 )

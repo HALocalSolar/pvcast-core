@@ -6,7 +6,6 @@ import os
 
 import pytest
 from pvlib.location import Location
-
 from src.pvcast.model.manager import SYSTEM, SystemManager
 
 

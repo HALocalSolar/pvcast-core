@@ -30,9 +30,7 @@ class SystemManager:
         if not os.path.exists(config_path):
             raise FileNotFoundError(f"Config file {config_path} not found.")
         if not os.path.isfile(config_path):
-            raise IsADirectoryError(
-                f"Config file {config_path} is a directory."
-            )
+            raise IsADirectoryError(f"Config file {config_path} is a directory.")
 
         # read the configuration file
         config_file = ConfigReader(Path(config_path))
