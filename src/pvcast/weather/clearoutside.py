@@ -8,12 +8,11 @@ import re
 from urllib.parse import urljoin
 
 import pandas as pd
-import pint_pandas
+import pint_pandas  # noqa: F401
 import requests
 import voluptuous as vol
 from bs4 import BeautifulSoup
 from pvlib.location import Location
-
 from src.pvcast.weather.api import API_FACTORY, WeatherAPI
 
 _LOGGER = logging.getLogger(__name__)
@@ -31,8 +30,7 @@ class ClearOutside(WeatherAPI):
         timeout: dt.timedelta = dt.timedelta(seconds=10),
     ):
         """Class constructor"""
-        super().__init__(timeout)
-        self.location = location
+        super().__init__(location, timeout)
         lat = str(round(self.location.latitude, 2))
         lon = str(round(self.location.longitude, 2))
         self.url = urljoin(self._url_base, f"{lat}/{lon}")
@@ -55,15 +53,11 @@ class ClearOutside(WeatherAPI):
             weather_data_list.append(self._find_elements(day_div))
 
         df = pd.concat(weather_data_list, ignore_index=True)
-
-        # convert to pint datatype
         df = df.astype(self.input_schema)
-
-        # add timestamp column
         df["datetime"] = pd.date_range(
             start=start,
             periods=len(df),
-            freq="h",  # Use lowercase 'h' for hourly frequency
+            freq="h",
         )
 
         return df
@@ -97,14 +91,16 @@ class ClearOutside(WeatherAPI):
         wind_speeds = []
         wind_dirs = []
         for row in detail_rows:
-            label = row.find("span", class_="fc_detail_label").get_text(strip=True)
+            label_span = row.find("span", class_="fc_detail_label")
+            label = label_span.get_text(strip=True) if label_span is not None else ""
             if label == "Wind Speed/Direction (mph)":
                 for li in row.find_all("li"):
                     wind_speeds.append(li.get_text(strip=True))
                     title = li.get("title", "")
+                    title_str = str(title) if title is not None else ""
                     direction = (
-                        title.split("from the ")[-1].split(" (")[0]
-                        if "from the" in title
+                        title_str.split("from the ")[-1].split(" (")[0]
+                        if "from the" in title_str
                         else ""
                     )
                     wind_dirs.append(direction)
@@ -123,9 +119,12 @@ class ClearOutside(WeatherAPI):
 
     def _get_start_time(self, soup: BeautifulSoup) -> dt.datetime:
         """Get start time including timezone from the forecast header."""
+        fc_hours_div = soup.find("div", class_="fc_hours")
+        if fc_hours_div is None:
+            raise ValueError("Could not find 'fc_hours' div in the HTML.")
         match = re.search(
             r'<div class="fc_hours fc_hour_ratings">.*?<li[^>]*?><span[^>]*?>.*?</span>\s*(\d{1,2})\s*<span>',
-            soup.find("div", class_="fc_hours").decode(),
+            str(fc_hours_div),
             re.DOTALL,
         )
         # get hour

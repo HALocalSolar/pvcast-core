@@ -64,8 +64,7 @@ class WeatherAPI(ABC):
 
         _LOGGER.debug("Weather data retrieved: \n%s", df.head(24))
 
-        # validate the response
-        validated_data: dict = self._validate(df.copy())
+        validated_data: list = self._validate(df.copy())
         return pd.DataFrame.from_records(validated_data)
 
     def _validate(self, df: pd.DataFrame) -> list:

@@ -13,7 +13,7 @@ from pytz import UnknownTimeZoneError
 
 from src.pvcast.weather.api import API_FACTORY
 
-from .const import PLANT_SCHEMAS
+from .schemas import PLANT_SCHEMA
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -22,9 +22,11 @@ def valid_timezone(value: str) -> str:
     """Validate that the input is a valid timezone string."""
     try:
         pytz.timezone(value)
-        return value
     except UnknownTimeZoneError as exc:
-        raise vol.Invalid(f"Unknown timezone: {value}") from exc
+        msg = f"Unknown timezone: {value}"
+        raise vol.Invalid(msg) from exc
+    else:
+        return value
 
 
 @dataclass
@@ -80,7 +82,6 @@ class ConfigReader:
         :return: Config schema.
         """
         weather_api_schemas = API_FACTORY.get_schema_list()
-        plant_schemas = PLANT_SCHEMAS
 
         # create the schema for the configuration file
         return vol.Schema(
@@ -98,6 +99,6 @@ class ConfigReader:
                         vol.Required("timezone"): valid_timezone,
                     },
                 },
-                vol.Required("plant"): [vol.Any(*plant_schemas)],
+                vol.Required("plant"): [PLANT_SCHEMA],
             }
         )

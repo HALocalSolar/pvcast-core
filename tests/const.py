@@ -37,6 +37,7 @@ TEST_CONF_MICRO_PATH = Path(__file__).parent / "configs" / "test_config_micro.ya
 TEST_CONF_MISSING = (
     Path(__file__).parent / "configs" / "test_config_missing_sources.yaml"
 )
+TEST_CONF_SIMPLE_PATH = Path(__file__).parent / "configs" / "test_config_simple.yaml"
 
 HASS_TEST_URL = "192.168.1.217:8123"
 HASS_TEST_TOKEN = """eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhMTI1Mzg4MTVlZDk0M\

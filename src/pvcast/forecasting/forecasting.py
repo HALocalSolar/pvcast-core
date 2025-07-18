@@ -25,7 +25,8 @@ class ForecastResult:
     """Object to store the aggregated results of the PV simulation.
 
     :param fc_type: The type of the result.
-    :param ac_power: The sum of AC power outputs of all ModelChain objects in the PV plant.
+    :param ac_power: The sum of AC power outputs of all ModelChain objects
+        in the PV plant.
     """
 
     fc_type: ForecastType

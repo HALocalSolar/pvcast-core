@@ -1,0 +1,39 @@
+# configuration file for pvcast
+# micro inverter configuration
+
+---
+general:
+  weather:
+    sources:
+      - name: CO
+        type: mockweatherapi
+  location:
+    latitude: 52.35845515630293
+    longitude: 4.88115070391368
+    altitude: 0
+    timezone: Europe/Amsterdam
+
+plant:
+  - name: EastWest
+    arrays:
+      - name: East
+        tilt: 30
+        azimuth: 90
+        dc_power: 1800
+        ac_power: 1500
+      - name: West
+        tilt: 10
+        azimuth: 270
+        dc_power: 1800
+        ac_power: 1500
+  - name: NorthSouth
+    ac_power: 3000
+    arrays:
+      - name: North
+        tilt: 25
+        azimuth: 0
+        dc_power: 1800
+      - name: West
+        tilt: 20
+        azimuth: 180
+        dc_power: 1800
