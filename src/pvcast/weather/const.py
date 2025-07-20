@@ -12,7 +12,7 @@ DT_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
 def _validate_sorted_and_evenly_spaced(data: list) -> list:
     """Validate that the timestamps are sorted and evenly spaced."""
-    timestamps = [entry["datetime"] for entry in data]
+    timestamps = [entry["timestamp"] for entry in data]
 
     # check for gaps
     dt_diffs = np.diff(timestamps)
@@ -26,7 +26,7 @@ WEATHER_SCHEMA = vol.Schema(
     vol.All(
         [
             {
-                vol.Required("datetime"): vol.All(datetime),
+                vol.Required("timestamp"): vol.All(datetime),
                 vol.Required("temperature"): vol.All(
                     vol.Coerce(float), vol.Range(min=-100, max=100)
                 ),

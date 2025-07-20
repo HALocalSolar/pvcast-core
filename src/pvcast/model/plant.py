@@ -108,6 +108,7 @@ class Plant(ABC):
 
         for plant in self._plants:
             plant.run_model(df)
+            ac = plant.results.ac.copy()
 
 
 class MicroPlant(Plant):

@@ -54,7 +54,7 @@ class ClearOutside(WeatherAPI):
 
         df = pd.concat(weather_data_list, ignore_index=True)
         df = df.astype(self.input_schema)
-        df["datetime"] = pd.date_range(
+        df["timestamp"] = pd.date_range(
             start=start,
             periods=len(df),
             freq="h",
