@@ -19,14 +19,14 @@ plant:
       - name: East
         tilt: 30
         azimuth: 90
-        modules_per_inverter: 8
+        modules_per_string: 8
         nr_inverters: 1
         module: Trina_Solar_TSM_330DD14A_II_
         inverter: Enphase_Energy_Inc___IQ7X_96_x_ACM_US__240V_
       - name: West
         tilt: 10
         azimuth: 270
-        modules_per_inverter: 8
+        modules_per_string: 8
         nr_inverters: 1
         module: Trina_Solar_TSM_330DD14A_II_
         inverter: Enphase_Energy_Inc___IQ7X_96_x_ACM_US__240V_
@@ -35,14 +35,14 @@ plant:
       - name: North
         tilt: 25
         azimuth: 0
-        modules_per_inverter: 8
+        modules_per_string: 8
         nr_inverters: 1
         module: Trina_Solar_TSM_330DD14A_II_
         inverter: Enphase_Energy_Inc___IQ7X_96_x_ACM_US__240V_
       - name: West
         tilt: 20
         azimuth: 180
-        modules_per_inverter: 8
+        modules_per_string: 8
         nr_inverters: 1
         module: Trina_Solar_TSM_330DD14A_II_
         inverter: Enphase_Energy_Inc___IQ7X_96_x_ACM_US__240V_

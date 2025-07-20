@@ -13,6 +13,7 @@ from src.pvcast.config.configreader import ConfigReader
 
 from tests.const import (
     CONFIG_MICRO_DICT,
+    CONFIG_SIMPLE_MICRO_DICT,
     CONFIG_STRING_DICT,
     TEST_CONF_MICRO_PATH,
     TEST_CONF_SIMPLE_PATH,
@@ -37,6 +38,11 @@ class TestConfigReader:
     def config_dict_micro(self) -> dict:
         """Fixture for the microinverter config dictionary."""
         return copy.deepcopy(CONFIG_MICRO_DICT)
+
+    @pytest.fixture
+    def config_dict_simple(self) -> dict:
+        """Fixture for the simple config dictionary."""
+        return copy.deepcopy(CONFIG_SIMPLE_MICRO_DICT)
 
     def test_configreader_no_config_file(self) -> None:
         """Test the configreader without a config file."""
@@ -141,6 +147,34 @@ class TestConfigReader:
             match="Configuration file 12345 is not a valid path or dictionary.",
         ):
             ConfigReader(12345)  # type: ignore[arg-type]
+
+    def test_exclusive_ac_power_inverter_keys(self, config_dict_string: dict) -> None:
+        """Test that presence of both inverter and ac_power raises an error."""
+        config_dict_string["plant"][0]["ac_power"] = 5000
+        with pytest.raises(
+            vol.MultipleInvalid,
+            match=re.escape("extra keys not allowed @ data['ac_power']"),
+        ):
+            ConfigReader(config_dict_string)
+
+    def test_duplicate_ac_power(self, config_dict_simple: dict) -> None:
+        """We can't have both ac_power keys at the inverter and the array level."""
+        config_dict_simple["plant"][0]["ac_power"] = 5000
+        with pytest.raises(
+            vol.MultipleInvalid,
+            match=re.escape("extra keys not allowed @ data['ac_power']"),
+        ):
+            ConfigReader(config_dict_simple)
+
+    def test_simple_full_mixed_config(self, config_dict_string: dict) -> None:
+        """Test that a mixed config with both simple and complex keys throws an error."""
+        config_dict_string["plant"][0]["ac_power"] = 5000
+        config_dict_string["plant"][0].pop("inverter", None)
+        with pytest.raises(
+            vol.MultipleInvalid,
+            match=re.escape("extra keys not allowed @ data['ac_power']"),
+        ):
+            ConfigReader(config_dict_string)
 
     @pytest.mark.parametrize("config", [TEST_CONF_STRING_PATH], indirect=True)
     def test_correct_coercion_of_types(self, config: ConfigReader) -> None:

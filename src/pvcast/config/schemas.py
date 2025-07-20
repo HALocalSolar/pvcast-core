@@ -1,4 +1,4 @@
-"""PV‑system validation schema (Voluptuous)."""
+"""PV-system validation schema (Voluptuous)."""
 
 from __future__ import annotations
 
@@ -55,7 +55,7 @@ ARRAY_FULL_MICRO: Final = Schema(
         Required("name"): STR,
         Required("tilt"): TILT,
         Required("azimuth"): AZIMUTH,
-        Required("modules_per_inverter"): _positive_int(),
+        Required("modules_per_string"): _positive_int(),
         Required("nr_inverters"): _positive_int(),
         Required("module"): STR,
         Required("inverter"): STR,
@@ -112,7 +112,7 @@ SYSTEM_FULL_STRING: Final = Schema(
 
 def _dispatch(data: object) -> object:
     """Pick the first schema that validates *data* or raise a combined error."""
-    excs: list[Invalid] = []
+    excs: set[Invalid] = set()
     for variant in (
         SYSTEM_SIMPLE_MICRO,
         SYSTEM_SIMPLE_STRING,
@@ -122,7 +122,7 @@ def _dispatch(data: object) -> object:
         try:
             return variant(data)  # type: ignore[arg-type]
         except Invalid as exc:
-            excs.append(exc)
+            excs.add(exc)
             continue
     msg = f"config contains potential errors: \n{'\n'.join(str(exc) for exc in excs)}"
     raise Invalid(msg)

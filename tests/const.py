@@ -49,16 +49,19 @@ HASS_WEATHER_ENTITY_ID = "weather.forecast_thuis"
 # get_weather_sources in file pvcast/webserver/models/live.py
 MOCK_WEATHER_API = "ClearOutside"
 
-CONFIG_STRING_DICT = {
+BASE = {
     "general": {
         "weather": {"sources": [{"name": "CO", "type": "mockweatherapi"}]},
         "location": {
             "latitude": 52.35845515630293,
             "longitude": 4.88115070391368,
-            "altitude": 0.0,
+            "altitude": 0,
             "timezone": "Europe/Amsterdam",
         },
     },
+}
+
+CONFIG_STRING_DICT = BASE | {
     "plant": [
         {
             "name": "EastWest",
@@ -107,16 +110,7 @@ CONFIG_STRING_DICT = {
     ],
 }
 
-CONFIG_MICRO_DICT = {
-    "general": {
-        "weather": {"sources": [{"name": "CO", "type": "mockweatherapi"}]},
-        "location": {
-            "latitude": 52.35845515630293,
-            "longitude": 4.88115070391368,
-            "altitude": 0,
-            "timezone": "Europe/Amsterdam",
-        },
-    },
+CONFIG_MICRO_DICT = BASE | {
     "plant": [
         {
             "name": "EastWest",
@@ -125,7 +119,7 @@ CONFIG_MICRO_DICT = {
                     "name": "East",
                     "tilt": 30,
                     "azimuth": 90,
-                    "modules_per_inverter": 1,
+                    "modules_per_string": 1,
                     "nr_inverters": 4,
                     "module": "Trina_Solar_TSM_330DD14A_II_",
                     "inverter": "Enphase_Energy_Inc___IQ7X_96_x_ACM_US__240V_",
@@ -134,7 +128,7 @@ CONFIG_MICRO_DICT = {
                     "name": "West",
                     "tilt": 10,
                     "azimuth": 270,
-                    "modules_per_inverter": 1,
+                    "modules_per_string": 1,
                     "nr_inverters": 4,
                     "module": "Trina_Solar_TSM_330DD14A_II_",
                     "inverter": "Enphase_Energy_Inc___IQ7X_96_x_ACM_US__240V_",
@@ -148,7 +142,7 @@ CONFIG_MICRO_DICT = {
                     "name": "North",
                     "tilt": 25,
                     "azimuth": 0,
-                    "modules_per_inverter": 1,
+                    "modules_per_string": 1,
                     "nr_inverters": 4,
                     "module": "Trina_Solar_TSM_330DD14A_II_",
                     "inverter": "Enphase_Energy_Inc___IQ7X_96_x_ACM_US__240V_",
@@ -157,12 +151,59 @@ CONFIG_MICRO_DICT = {
                     "name": "West",
                     "tilt": 20,
                     "azimuth": 180,
-                    "modules_per_inverter": 1,
+                    "modules_per_string": 1,
                     "nr_inverters": 4,
                     "module": "Trina_Solar_TSM_330DD14A_II_",
                     "inverter": "Enphase_Energy_Inc___IQ7X_96_x_ACM_US__240V_",
                 },
             ],
         },
+    ],
+}
+
+CONFIG_SIMPLE_MICRO_DICT = BASE | {
+    "plant": [
+        {
+            "name": "SimplePlant",
+            "arrays": [
+                {
+                    "name": "Array1",
+                    "tilt": 30,
+                    "azimuth": 180,
+                    "dc_power": 1000,
+                    "ac_power": 800,
+                },
+                {
+                    "name": "Array2",
+                    "tilt": 35,
+                    "azimuth": 120,
+                    "dc_power": 1100,
+                    "ac_power": 800,
+                },
+            ],
+        }
+    ],
+}
+
+CONFIG_SIMPLE_STRING_DICT = BASE | {
+    "plant": [
+        {
+            "name": "SimpleStringPlant",
+            "ac_power": 1600,
+            "arrays": [
+                {
+                    "name": "Array1",
+                    "tilt": 30,
+                    "azimuth": 90,
+                    "dc_power": 1000,
+                },
+                {
+                    "name": "Array2",
+                    "tilt": 30,
+                    "azimuth": 270,
+                    "dc_power": 1000,
+                },
+            ],
+        }
     ],
 }
