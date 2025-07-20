@@ -7,6 +7,10 @@ import pytest
 from pvlib.location import Location
 from pvlib.modelchain import ModelChain
 from src.pvcast.model.plant import MicroPlant, StringPlant
+from src.pvcast.weather.atmospheric import (
+    add_precipitable_water,
+    cloud_cover_to_irradiance,
+)
 
 from tests.const import (
     CONFIG_MICRO_DICT,
@@ -159,5 +163,19 @@ class TestPlant:
         assert isinstance(micro_plant, MicroPlant)
         assert callable(micro_plant.run)
         assert isinstance(weather_df, pd.DataFrame)
+
+        # add irradiance data
+        weather_df = cloud_cover_to_irradiance(
+            weather_df,
+            how="clearsky_scaling",
+            location=micro_plant.location,
+            merge=True,
+        )
+
+        # add precipitable water
+        weather_df = add_precipitable_water(weather_df)
+
         # run forecast
         micro_plant.run(weather_df)
+
+        print("Micro plant results:\n", micro_plant.results)

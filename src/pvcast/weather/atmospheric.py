@@ -5,6 +5,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from pvlib.atmosphere import gueymard94_pw
 from pvlib.irradiance import campbell_norman, disc, get_extra_radiation
 from pvlib.location import Location
 
@@ -15,6 +16,7 @@ def cloud_cover_to_irradiance(
     cloud_cover: pd.DataFrame,
     location: Location,
     how: str = "clearsky_scaling",
+    merge: bool = False,
     **kwargs: Any,
 ) -> pd.DataFrame:
     """Convert cloud cover to irradiance. A wrapper method.
@@ -30,6 +32,12 @@ def cloud_cover_to_irradiance(
     # datetimes must be provided as a pd.DatetimeIndex otherwise pvlib fails
     if "timestamp" not in cloud_cover.columns:
         raise ValueError("cloud_cover DataFrame must contain a 'timestamp' column.")
+
+    if cloud_cover.empty:
+        _LOGGER.warning(
+            "Received empty cloud cover DataFrame, returning empty DataFrame."
+        )
+        return pd.DataFrame(columns=["timestamp", "ghi", "dni", "dhi"])
 
     # infer frequency from the data
     datetime_series = pd.to_datetime(cloud_cover["timestamp"]).sort_values()
@@ -61,6 +69,17 @@ def cloud_cover_to_irradiance(
     _LOGGER.debug(
         "Converted cloud cover to irradiance using %s. Result: \n%s", how, irrads
     )
+
+    # merge with original cloud cover DataFrame if requested
+    if merge:
+        irrads["timestamp"] = times
+        irrads = pd.merge(
+            cloud_cover,
+            irrads,
+            on="timestamp",
+            how="outer",
+        )
+
     return irrads
 
 
@@ -157,3 +176,18 @@ def _cloud_cover_to_ghi_linear(
     cloud_cover = cloud_cover / 100.0
     ghi = (offset + (1 - offset) * (1 - cloud_cover)) * ghi_clear
     return np.array(ghi, dtype=np.float64)
+
+
+def add_precipitable_water(weather_df: pd.DataFrame) -> pd.DataFrame:
+    """Add precipitable water to the weather dataframe."""
+    if "temperature" not in weather_df:
+        msg = "Temperature missing from weather dataframe"
+        raise KeyError(msg)
+    if "humidity" not in weather_df:
+        msg = "Humidity missing from weather dataframe"
+        raise KeyError(msg)
+    temperature = weather_df["temperature"].to_numpy()
+    humidity = weather_df["humidity"].to_numpy()
+    precipitable_water = gueymard94_pw(temperature, humidity)
+    weather_df["precipitable_water"] = precipitable_water
+    return weather_df

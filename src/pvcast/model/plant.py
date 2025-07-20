@@ -39,6 +39,7 @@ class Plant(ABC):
         self._inverters: dict = {}
         self._simple: bool = False
         self._name = self._config["name"]
+        self._results: pd.DataFrame | None = None
 
         _LOGGER.debug(
             "Creating PV system model of type %s, with config: %s",
@@ -66,6 +67,21 @@ class Plant(ABC):
             len(self._plants),
             self._name,
         )
+
+    @property
+    def location(self) -> Location:
+        """Return the location of the plant."""
+        return self._location
+
+    @property
+    def results(self) -> pd.DataFrame:
+        """Return the results of the plant model."""
+        if self._results is None:
+            raise ValueError("Plant results are not available. Run the model first.")
+        _LOGGER.debug("Returning results of the plant model.")
+
+        # return a copy to avoid accidental modifications
+        return self._results.copy()
 
     @abstractmethod
     def _construct(self) -> None:
@@ -99,16 +115,37 @@ class Plant(ABC):
             msg = f"Invalid inverter in configuration: {exc}"
             raise KeyError(msg) from exc
 
-    def run(self, df: pd.DataFrame) -> None:
+    def run(self, weather_df: pd.DataFrame) -> None:
         """Run the model chain for each array in the plant.
 
         :param df: The weather/irradiance dataframe to use for the simulation.
         """
-        result_df = df.copy()
+        result_df = weather_df.copy()
+        weather_df.reset_index(drop=True, inplace=True)
+        weather_df.set_index("timestamp", inplace=True, drop=True)
+
+        # datatype needs to be datetime64[ns, UTC] for pvlib to not go haywire
+        weather_df.index = weather_df.index.astype("datetime64[ns, UTC]")
 
         for plant in self._plants:
-            plant.run_model(df)
-            ac = plant.results.ac.copy()
+            plant.run_model(weather_df)
+
+            if plant.results.ac is not None:
+                ac = plant.results.ac.copy()
+                ac = ac.to_frame(name=plant.name)
+                result_df = result_df.merge(
+                    ac,
+                    on="timestamp",
+                    suffixes=("", f"_{plant.name}_ac"),
+                )
+            else:
+                _LOGGER.warning(
+                    "Model chain %s did not produce AC results. Skipping.",
+                    plant.name,
+                )
+
+        # store the results in the plant object
+        self._results = result_df
 
 
 class MicroPlant(Plant):
@@ -172,7 +209,12 @@ class MicroPlant(Plant):
 
                 # create the model chain
                 self._plants.append(
-                    ModelChain(system, self._location, aoi_model="physical")
+                    ModelChain(
+                        system,
+                        self._location,
+                        aoi_model="physical",
+                        name=f"{self._name}_{array['name']}_{i}",
+                    )
                 )
 
 
@@ -239,4 +281,6 @@ class StringPlant(Plant):
             inverter_parameters=inverter_parameters,
             name=self._name,
         )
-        self._plants = [ModelChain(system, self._location, aoi_model="physical")]
+        self._plants = [
+            ModelChain(system, self._location, aoi_model="physical", name=self._name)
+        ]
