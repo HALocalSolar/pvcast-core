@@ -139,7 +139,7 @@ def _cloud_cover_to_irradiance_campbell_norman(
     )
 
     # convert cloud cover to GHI/DNI/DHI
-    irrads = campbell_norman(zen, transmittance, dni_extra=dni_extra)
+    irrads = campbell_norman(zen, transmittance, dni_extra=dni_extra) # type: ignore
 
     # construct df with ghi, dni, dhi and fill NaNs with 0
     result = pd.DataFrame(
