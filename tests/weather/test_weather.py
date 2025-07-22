@@ -10,7 +10,7 @@ import voluptuous as vol
 from pvlib.location import Location
 from src.pvcast.weather.api import API_FACTORY, WeatherAPI, WeatherAPIFactory
 
-from ..conftest import MockWeatherAPI
+from tests.conftest import MockWeatherAPI
 
 
 class CommonWeatherTests:
@@ -22,7 +22,7 @@ class CommonWeatherTests:
     """
 
     @pytest.mark.parametrize("weather_api", [], indirect=True)
-    def test_weather_init(self, weather_api: WeatherAPI):
+    def test_weather_init(self, weather_api: WeatherAPI) -> None:
         """Test the WeatherAPI initialization."""
         assert weather_api is not None
 
@@ -53,14 +53,11 @@ class WeatherProviderTests:
         assert isinstance(df, pd.DataFrame)
         assert df.shape[0] >= 24
         assert isinstance(weather_api._validate(df.copy()), list)
-        # save to CSV
-        # df.to_csv("tests/data/weather.csv", index=False)
 
     def test_get_weather_gaps(self, weather_api: WeatherAPI) -> None:
         """Test the get_weather function with gaps in the data."""
         df = weather_api.get_weather()
         assert isinstance(weather_api._validate(df.copy()), list)
-        # delete rows in the middle of the dataframe
         df = df.drop(df.index[5:10])
         with pytest.raises(
             ValueError,
@@ -106,13 +103,16 @@ class TestWeatherFactory:
         assert isinstance(api_list, list)
         assert len(api_list) >= 1
 
-    def test_get_weather_api_list_str(
-        self,
-        # weather_api_factory: WeatherAPIFactory
-    ) -> None:
+    def test_get_weather_api_list_str(self) -> None:
         """Test the get_weather_api function with a list of strings."""
         assert isinstance(API_FACTORY, WeatherAPIFactory)
         api_list = API_FACTORY.get_weather_api_list_str()
         assert isinstance(api_list, list)
         assert len(api_list) >= 1
         assert "mockweatherapi" in api_list
+
+    def test_unknown_weather_api_schema(self) -> None:
+        """Test the get_weather_api function with an unknown API."""
+        assert isinstance(API_FACTORY, WeatherAPIFactory)
+        with pytest.raises(ValueError, match="Unknown weather API schema: unknown_api"):
+            API_FACTORY.get_weather_api_schema("unknown_api")

@@ -50,7 +50,7 @@ class TestAtmospheric:
             }
         )
         with pytest.raises(
-            ValueError, match="cloud_cover DataFrame must contain a 'timestamp' column."
+            ValueError, match="cloud_cover DataFrame index must be a pd.DatetimeIndex."
         ):
             cloud_cover_to_irradiance(
                 weather_data, how="clearsky_scaling", location=Location(0, 0)
@@ -58,12 +58,12 @@ class TestAtmospheric:
 
     def test_empty_dataframe(self, location: Location) -> None:
         """Test cloud_cover_to_irradiance with an empty DataFrame."""
-        empty_df = pd.DataFrame(columns=["timestamp", "cloud_cover"])
-        irrads = cloud_cover_to_irradiance(
-            empty_df, how="clearsky_scaling", location=location
-        )
-        assert isinstance(irrads, pd.DataFrame)
-        assert irrads.empty
+        empty_df = pd.DataFrame(columns=["cloud_cover"])
+        empty_df.index = pd.DatetimeIndex([])
+        with pytest.raises(ValueError, match="cloud_cover DataFrame is empty."):
+            cloud_cover_to_irradiance(
+                empty_df, how="clearsky_scaling", location=location
+            )
 
     def test_merge_option(self, weather_df: pd.DataFrame, location: Location) -> None:
         """Test cloud_cover_to_irradiance with merge option."""
@@ -75,7 +75,6 @@ class TestAtmospheric:
         assert "dni" in irrads.columns
         assert "dhi" in irrads.columns
         assert len(irrads) == len(weather_df)
-        assert not irrads["timestamp"].isna().any()
         assert not irrads["cloud_cover"].isna().any()
 
     def test_add_precipitable_water(self, weather_df: pd.DataFrame) -> None:

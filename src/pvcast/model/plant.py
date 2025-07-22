@@ -6,12 +6,15 @@ import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
+import numpy as np
+import pandas as pd
 from pvlib.modelchain import ModelChain
 from pvlib.pvsystem import Array, FixedMount, PVSystem, retrieve_sam
 from pvlib.temperature import TEMPERATURE_MODEL_PARAMETERS
 
+from .const import RENAME_WEATHER_COLUMNS
+
 if TYPE_CHECKING:
-    import pandas as pd
     from pvlib.location import Location
 
 _LOGGER = logging.getLogger(__name__)
@@ -77,8 +80,8 @@ class Plant(ABC):
     def results(self) -> pd.DataFrame:
         """Return the results of the plant model."""
         if self._results is None:
-            raise ValueError("Plant results are not available. Run the model first.")
-        _LOGGER.debug("Returning results of the plant model.")
+            msg = "Plant results are not available. Run the model first."
+            raise ValueError(msg)
 
         # return a copy to avoid accidental modifications
         return self._results.copy()
@@ -115,37 +118,104 @@ class Plant(ABC):
             msg = f"Invalid inverter in configuration: {exc}"
             raise KeyError(msg) from exc
 
-    def run(self, weather_df: pd.DataFrame) -> None:
+    def run(self, weather_df: pd.DataFrame, *, add_individual: bool = False) -> None:
         """Run the model chain for each array in the plant.
 
-        :param df: The weather/irradiance dataframe to use for the simulation.
+        :param weather_df: The weather/irradiance dataframe to use for the
+            simulation. Must contain a 'timestamp' column with timezone-aware
+            datetime data.
+        :param add_individual: If True, add individual plant AC power columns to the results.
+        :raises ValueError: If required columns are missing or timestamp format
+            is invalid.
         """
         result_df = weather_df.copy()
-        weather_df.reset_index(drop=True, inplace=True)
-        weather_df.set_index("timestamp", inplace=True, drop=True)
+        weather_df = self._prepare_weather_data(weather_df)
+        self._validate_weather_dataframe(weather_df)
+        ac_power_results: list[pd.Series] = []
+        total_ac_power = np.zeros(len(weather_df), dtype=float)
 
-        # datatype needs to be datetime64[ns, UTC] for pvlib to not go haywire
-        weather_df.index = weather_df.index.astype("datetime64[ns, UTC]")
-
+        # run model for each plant
         for plant in self._plants:
-            plant.run_model(weather_df)
+            try:
+                plant.run_model(weather_df)
+                ac = plant.results.ac
 
-            if plant.results.ac is not None:
-                ac = plant.results.ac.copy()
-                ac = ac.to_frame(name=plant.name)
-                result_df = result_df.merge(
-                    ac,
-                    on="timestamp",
-                    suffixes=("", f"_{plant.name}_ac"),
-                )
-            else:
-                _LOGGER.warning(
-                    "Model chain %s did not produce AC results. Skipping.",
+                if ac is not None:
+                    # accumulate total AC power
+                    ac_values = ac.to_numpy().flatten()
+                    total_ac_power += ac_values
+
+                    # store individual plant results with proper naming
+                    ac_series = pd.Series(
+                        ac_values, index=result_df.index, name=f"ac_{plant.name}"
+                    )
+                    ac_power_results.append(ac_series)
+                    _LOGGER.debug(
+                        "Model chain %s produced %.2f kW peak AC power",
+                        plant.name,
+                        ac_values.max() / 1000,
+                    )
+                else:
+                    _LOGGER.warning(
+                        "Model chain %s did not produce AC results. Skipping.",
+                        plant.name,
+                    )
+            except RuntimeError:
+                _LOGGER.exception(
+                    "Error running model chain %s",
                     plant.name,
                 )
+                continue
+
+        # add total AC power to result DataFrame
+        result_df["ac"] = total_ac_power
+
+        # add individual plant AC power columns
+        if add_individual:
+            for ac_series in ac_power_results:
+                result_df[ac_series.name] = ac_series
 
         # store the results in the plant object
         self._results = result_df
+
+        _LOGGER.info(
+            "Completed simulation for %d model chains. Peak total AC power: %.2f kW",
+            len(self._plants),
+            total_ac_power.max() / 1000,
+        )
+
+    def _validate_weather_dataframe(self, weather_df: pd.DataFrame) -> None:
+        """Validate the input weather DataFrame.
+
+        :param weather_df: The weather DataFrame to validate.
+        :raises ValueError: If validation fails.
+        """
+        if weather_df.empty:
+            msg = "Weather DataFrame cannot be empty"
+            raise ValueError(msg)
+
+        # check that index is a DatetimeIndex
+        if not isinstance(weather_df.index, pd.DatetimeIndex):
+            msg = "Weather DataFrame index must be a pd.DatetimeIndex"
+            raise TypeError(msg)
+
+        # check for required weather columns (basic validation)
+        required_cols = ["ghi", "dni", "dhi", "temp_air", "wind_speed"]
+        missing_cols = [col for col in required_cols if col not in weather_df.columns]
+        if missing_cols:
+            _LOGGER.warning(
+                "Missing optional weather columns: %s. "
+                "Using default values where needed.",
+                missing_cols,
+            )
+
+    def _prepare_weather_data(self, weather_df: pd.DataFrame) -> pd.DataFrame:
+        """Prepare weather data for pvlib model chains.
+
+        :param weather_df: The input weather DataFrame.
+        :return: The prepared DataFrame with proper indexing for pvlib.
+        """
+        return weather_df.rename(columns=RENAME_WEATHER_COLUMNS)
 
 
 class MicroPlant(Plant):
@@ -222,6 +292,11 @@ class StringPlant(Plant):
     """String inverter based PV plant model."""
 
     def __init__(self, config: dict, location: Location) -> None:
+        """Initialize the string inverter based PV plant model.
+
+        :param config: The PV plant configuration dictionary.
+        :param location: The physical location of the PV plant.
+        """
         self._config = config
         self._location = location
         super().__init__()

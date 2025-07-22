@@ -29,56 +29,28 @@ def cloud_cover_to_irradiance(
     :param **kwargs: Passed to the selected method.
     :return: Irradiance, columns include ghi, dni, dhi.
     """
-    # datetimes must be provided as a pd.DatetimeIndex otherwise pvlib fails
-    if "timestamp" not in cloud_cover.columns:
-        raise ValueError("cloud_cover DataFrame must contain a 'timestamp' column.")
-
+    if not isinstance(cloud_cover.index, pd.DatetimeIndex):
+        raise ValueError("cloud_cover DataFrame index must be a pd.DatetimeIndex.")
     if cloud_cover.empty:
-        _LOGGER.warning(
-            "Received empty cloud cover DataFrame, returning empty DataFrame."
-        )
-        return pd.DataFrame(columns=["timestamp", "ghi", "dni", "dhi"])
-
-    # infer frequency from the data
-    datetime_series = pd.to_datetime(cloud_cover["timestamp"]).sort_values()
-    freq = pd.infer_freq(datetime_series)
-
-    # fallback to hourly if frequency can't be inferred
-    if freq is None:
-        freq = "h"
-
-    times = pd.date_range(
-        cloud_cover["timestamp"].min(),
-        cloud_cover["timestamp"].max(),
-        freq=freq,
-    )
+        raise ValueError("cloud_cover DataFrame is empty.")
 
     # convert cloud cover to GHI/DNI/DHI
     how = how.lower()
     if how == "clearsky_scaling":
         irrads = _cloud_cover_to_irradiance_clearsky_scaling(
-            cloud_cover, location, times, **kwargs
+            cloud_cover, location, cloud_cover.index, **kwargs
         )
     elif how == "campbell_norman":
         irrads = _cloud_cover_to_irradiance_campbell_norman(
-            cloud_cover, location, times, **kwargs
+            cloud_cover, location, cloud_cover.index, **kwargs
         )
     else:
         msg = f"Invalid how argument: {how}"
         raise ValueError(msg)
-    _LOGGER.debug(
-        "Converted cloud cover to irradiance using %s. Result: \n%s", how, irrads
-    )
 
     # merge with original cloud cover DataFrame if requested
     if merge:
-        irrads["timestamp"] = times
-        irrads = pd.merge(
-            cloud_cover,
-            irrads,
-            on="timestamp",
-            how="outer",
-        )
+        irrads = pd.concat([cloud_cover, irrads], axis=1)
 
     return irrads
 
@@ -139,7 +111,7 @@ def _cloud_cover_to_irradiance_campbell_norman(
     )
 
     # convert cloud cover to GHI/DNI/DHI
-    irrads = campbell_norman(zen, transmittance, dni_extra=dni_extra) # type: ignore
+    irrads = campbell_norman(zen, transmittance, dni_extra=dni_extra)  # type: ignore
 
     # construct df with ghi, dni, dhi and fill NaNs with 0
     result = pd.DataFrame(

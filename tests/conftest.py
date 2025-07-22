@@ -64,7 +64,8 @@ def pytest_sessionstart(session: pytest.Session) -> None:
 def weather_df() -> pd.DataFrame:
     """Fixture for a basic pvlib input weather dataframe."""
     path = "tests/data/weather.csv"
-    df = pd.read_csv(path, parse_dates=["timestamp"])
-    df["timestamp"] = pd.to_datetime(df["timestamp"])
-    df["timestamp"] = df["timestamp"].dt.tz_convert("UTC")
-    return df
+    df_weather = pd.read_csv(path, parse_dates=["timestamp"])
+    df_weather["timestamp"] = pd.to_datetime(df_weather["timestamp"])
+    df_weather["timestamp"] = df_weather["timestamp"].dt.tz_convert("UTC")
+    df_weather = df_weather.set_index(pd.DatetimeIndex(df_weather["timestamp"]))
+    return df_weather.drop(columns=["timestamp"])
