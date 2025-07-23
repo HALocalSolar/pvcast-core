@@ -57,3 +57,14 @@ class TestSystemManager:
     def test_manager_global_instance(self) -> None:
         """Test the global instance of SystemManager."""
         assert SYSTEM is not None
+        assert isinstance(SYSTEM, SystemManager)
+
+    def test_get_pv_plants(self, sys: SystemManager) -> None:
+        """Test getting PV plants from the SystemManager."""
+        pv_plants = sys.pv_plants
+        assert isinstance(pv_plants, dict)
+        assert len(pv_plants) > 0
+        for name, plant in pv_plants.items():
+            assert isinstance(name, str)
+            assert name in [p["name"] for p in sys.config["plant"]]
+            assert isinstance(plant, plant.__class__)

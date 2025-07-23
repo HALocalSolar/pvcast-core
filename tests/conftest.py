@@ -8,7 +8,10 @@ See https://stackoverflow.com/questions/34466027/in-pytest-what-is-the-use-of-co
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 import pandas as pd
 import pytest
@@ -36,6 +39,7 @@ class MockWeatherAPI(WeatherAPI):
 
     @property
     def input_schema(self) -> dict[str, str]:
+        """Return the input schema for the mock weather API."""
         return {
             "cloud_cover": "pint[dimensionless]",
             "temperature": "pint[celsius]",
@@ -55,9 +59,24 @@ def location(request: pytest.FixtureRequest) -> Location:
     return Location(*request.param)
 
 
-def pytest_sessionstart(session: pytest.Session) -> None:
+def pytest_sessionstart(session: pytest.Session) -> None:  # noqa: ARG001
     """Set up env variable."""
     os.environ["PVCAST_CONFIG"] = "tests/configs/test_config_string.yaml"
+
+
+@pytest.fixture(autouse=True)
+def reset_pvcast_config() -> Generator[None]:
+    """Fixture to automatically reset PVCAST_CONFIG after each test."""
+    # Store the original value
+    original_value = os.environ.get("PVCAST_CONFIG")
+
+    yield  # This is where the test runs
+
+    # Reset to original value after test completes
+    if original_value is not None:
+        os.environ["PVCAST_CONFIG"] = original_value
+    else:
+        os.environ.pop("PVCAST_CONFIG", None)
 
 
 @pytest.fixture

@@ -32,7 +32,7 @@ class Plant(ABC):
     :param loc: The location of the PV plant.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, *, simple: bool = False) -> None:
         """Class constructor."""
         self._plants: list[ModelChain] = []
         self._config: dict
@@ -40,7 +40,7 @@ class Plant(ABC):
         self._location: Location
         self._modules: dict = {}
         self._inverters: dict = {}
-        self._simple: bool = False
+        self._simple: bool = simple
         self._name = self._config["name"]
         self._results: pd.DataFrame | None = None
 
@@ -52,11 +52,7 @@ class Plant(ABC):
 
         # set temperature model
         self._temp_param = TEMPERATURE_MODEL_PARAMETERS["pvsyst"]["freestanding"]
-
-        # if ac_power is present, we assume a simple model
-        if "ac_power" in self._config or any(
-            "ac_power" in array for array in self._config.get("arrays", [])
-        ):
+        if self._simple:
             _LOGGER.debug("Using simple model for PV plant.")
             self._simple = True
 
@@ -221,7 +217,9 @@ class Plant(ABC):
 class MicroPlant(Plant):
     """Micro inverter based PV plant model."""
 
-    def __init__(self, config: dict, location: Location) -> None:
+    def __init__(
+        self, config: dict, location: Location, *, simple: bool = False
+    ) -> None:
         """Initialize the micro-inverter based PV plant model.
 
         :param config: The PV plant configuration dictionary.
@@ -229,7 +227,7 @@ class MicroPlant(Plant):
         """
         self._config = config
         self._location = location
-        super().__init__()
+        super().__init__(simple=simple)
 
     def _construct(self) -> None:
         """Construct the PV plant model.
@@ -291,7 +289,9 @@ class MicroPlant(Plant):
 class StringPlant(Plant):
     """String inverter based PV plant model."""
 
-    def __init__(self, config: dict, location: Location) -> None:
+    def __init__(
+        self, config: dict, location: Location, *, simple: bool = False
+    ) -> None:
         """Initialize the string inverter based PV plant model.
 
         :param config: The PV plant configuration dictionary.
@@ -299,7 +299,7 @@ class StringPlant(Plant):
         """
         self._config = config
         self._location = location
-        super().__init__()
+        super().__init__(simple=simple)
 
     def _construct(self) -> None:
         """Construct the PV plant model.

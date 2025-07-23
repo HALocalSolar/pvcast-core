@@ -42,7 +42,16 @@ class TestPlant:
     ) -> StringPlant:
         """Fixture for the string plant."""
         config: dict = request.param
-        return StringPlant(config["plant"][0], location)
+        config = config["plant"][0]
+        simple = False
+
+        # if ac_power is present, we assume a simple model
+        if "ac_power" in config or any(
+            "ac_power" in array for array in config.get("arrays", [])
+        ):
+            simple = True
+
+        return StringPlant(config, location, simple=simple)
 
     @pytest.fixture
     def micro_plant(
@@ -50,7 +59,14 @@ class TestPlant:
     ) -> MicroPlant:
         """Fixture for the micro plant."""
         config: dict = request.param
-        return MicroPlant(config["plant"][0], location)
+        config = config["plant"][0]
+        simple = False
+        # if ac_power is present, we assume a simple model
+        if "ac_power" in config or any(
+            "ac_power" in array for array in config.get("arrays", [])
+        ):
+            simple = True
+        return MicroPlant(config, location, simple=simple)
 
     @pytest.mark.parametrize("location", LOCATIONS, indirect=True)
     @pytest.mark.parametrize("string_plant", [CONFIG_STRING_DICT], indirect=True)
