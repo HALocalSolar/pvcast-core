@@ -296,7 +296,7 @@ class TestPlant:
         )
 
         # return a DataFrame with a regular index (not DatetimeIndex)
-        def mock_prepare_weather_data(self, weather_df):  # noqa: ANN001, ANN202
+        def mock_prepare_weather_data(self, weather_df: pd.DataFrame) -> pd.DataFrame:  # noqa: ANN001, ARG001
             prepared_df = weather_df.copy()
             prepared_df.index = pd.Index(["invalid", "index"])
             return prepared_df
@@ -333,7 +333,7 @@ class TestPlant:
         weather_df = add_precipitable_water(weather_df)
 
         # mock run_model to raise RuntimeError for all plants
-        def mock_run_model_error(self, weather_data):  # noqa: ANN001, ANN202
+        def mock_run_model_error(self, weather_data) -> None:  # noqa: ANN001, ARG001
             msg = "Simulated model chain error"
             raise RuntimeError(msg)
 
@@ -479,7 +479,6 @@ class TestPlant:
 
         # set log level to capture warnings
         with caplog.at_level(logging.WARNING):
-            # run the model - this should NOT trigger missing columns warning
             micro_plant.run(weather_df)
 
         # check that no warning about missing columns was logged
