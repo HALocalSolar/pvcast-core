@@ -7,7 +7,6 @@ import os
 from pathlib import Path
 from typing import Any
 
-import pandas as pd
 from pvlib.location import Location
 from voluptuous import Invalid
 
@@ -21,8 +20,6 @@ from src.pvcast.config.schemas import (
 )
 from src.pvcast.forecasting.forecasting import (
     Clearsky,
-    ForecastResult,
-    ForecastType,
     Live,
 )
 from src.pvcast.model.plant import MicroPlant, Plant, StringPlant
@@ -70,8 +67,8 @@ class SystemManager:
         self._pv_plants: dict[str, Plant] = self._create_plants()
 
         # forecast results
-        self._clearsky = Clearsky()
-        self._live = Live()
+        self._clearsky = Clearsky(manager=self)
+        self._live = Live(manager=self)
 
     @property
     def config(self) -> dict[str, Any]:
@@ -97,15 +94,6 @@ class SystemManager:
     def live(self) -> Live:
         """The live weather-based forecast result."""
         return self._live
-
-    def run(self, weather_df: pd.DataFrame | None = None) -> ForecastResult:
-        """Run the PV system simulation.
-
-        :param weather_df: Optional weather data to use for the simulation.
-        :return: The forecast result containing AC power output.
-        """
-        _LOGGER.debug("Running PV system simulation with weather data: %s", weather_df)
-        return ForecastResult(fc_type=ForecastType.LIVE, ac_power=None)
 
     def get_pv_plant(self, name: str) -> Plant:
         """Get a PV plant model by name.

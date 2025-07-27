@@ -7,10 +7,12 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING
 
+import pandas as pd
+
 from pvcast.weather.atmospheric import add_precipitable_water
 
 if TYPE_CHECKING:
-    import pandas as pd
+    from src.pvcast.model.manager import SystemManager
 
 
 class ForecastType(Enum):
@@ -38,8 +40,8 @@ class ForecastResult:
 class PowerEstimate(ABC):
     """Abstract base class to do PV power estimation."""
 
-    fc_type: ForecastType = field(default=ForecastType.LIVE)
-    manager: Any = field(repr=False, default=None, init=False)
+    manager: SystemManager = field(repr=False)
+    fc_type: ForecastType = field()
     _model_attrs: dict[str, str] = field(repr=False, default_factory=dict, init=False)
 
     def run(self, weather_df: pd.DataFrame) -> ForecastResult:
@@ -53,7 +55,6 @@ class PowerEstimate(ABC):
         # run the forecast for each model chain
         result_df = pd.DataFrame()
 
-
     @abstractmethod
     def _prepare_weather(self, weather_df: pd.DataFrame) -> pd.DataFrame:
         """Prepare weather data for the forecast. This method should be implemented by subclasses.
@@ -66,12 +67,11 @@ class PowerEstimate(ABC):
         """
 
 
-
 @dataclass
 class Live(PowerEstimate):
     """Class for PV power forecasts based on live weather data."""
 
-    fc_type: ForecastType = field(default=ForecastType.LIVE)
+    fc_type: ForecastType = ForecastType.LIVE
 
     def _prepare_weather(self, weather_df: pd.DataFrame) -> pd.DataFrame:
         return add_precipitable_water(weather_df)
@@ -81,9 +81,7 @@ class Live(PowerEstimate):
 class Clearsky(PowerEstimate):
     """Class for PV power forecasts based on weather data."""
 
-    fc_type: ForecastType = field(default=ForecastType.CLEARSKY)
+    fc_type: ForecastType = ForecastType.CLEARSKY
 
     def _prepare_weather(self, weather_df: pd.DataFrame) -> pd.DataFrame:
         pass
-
-
